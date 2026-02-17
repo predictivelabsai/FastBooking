@@ -1,0 +1,45 @@
+services:
+  # ── Monolith (API + UI together) ─────────────────────────────────────
+  monolith:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.monolith
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      - DEPLOY_MODE=monolith
+    profiles:
+      - monolith
+
+  # ── API only ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      - DEPLOY_MODE=api
+    profiles:
+      - split
+
+  # ── UI only (talks to API) ──────────────────────────────────────────
+  ui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ui
+    ports:
+      - "8001:8001"
+    env_file:
+      - ../.env
+    environment:
+      - DEPLOY_MODE=ui
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      - api
+    profiles:
+      - split
