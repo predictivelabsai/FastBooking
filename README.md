@@ -59,7 +59,7 @@ docker/
 ├── Dockerfile.monolith
 ├── Dockerfile.api
 ├── Dockerfile.ui
-└── docker-compose.yml
+└── docker-compose.yaml
 seed.py                        # Sample data (3 restaurants, 14 products, 4 users)
 ```
 
