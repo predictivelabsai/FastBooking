@@ -13,7 +13,8 @@ def register_routes(app, client):
         restaurants = await client.list_restaurants()
         return layout(
             Div(cls="mb-6")(
-                H1(cls="text-2xl font-bold text-gray-800 mb-4")("Restaurants"),
+                H1(cls="text-2xl font-bold text-gray-800 mb-1")("Welcome to Food Angels!"),
+                P(cls="text-gray-500 mb-4")("A simple way to do good for the environment, and your wallet!"),
                 Div(cls="relative")(
                     Input(
                         type="search",
@@ -23,7 +24,7 @@ def register_routes(app, client):
                         hx_trigger="input changed delay:300ms, search",
                         hx_target="#restaurant-grid",
                         hx_swap="innerHTML",
-                        cls="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none",
+                        cls="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none",
                     ),
                 ),
             ),

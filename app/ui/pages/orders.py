@@ -17,7 +17,7 @@ def register_routes(app, client, get_user_id):
             return layout(
                 H1(cls="text-2xl font-bold text-gray-800 mb-4")("Your Orders"),
                 P(cls="text-gray-500 py-8 text-center")("No orders yet."),
-                A(href="/", cls="text-orange-600 hover:underline")("Browse restaurants"),
+                A(href="/", cls="text-green-600 hover:underline")("Browse restaurants"),
                 title="Orders — FoodAngels",
             )
 
@@ -85,7 +85,7 @@ def register_routes(app, client, get_user_id):
                     *product_rows,
                     Div(cls="flex justify-between mt-3 pt-3 border-t border-gray-200")(
                         Span(cls="font-semibold text-gray-700")("Total"),
-                        Span(cls="font-bold text-orange-600")(
+                        Span(cls="font-bold text-green-700")(
                             f'{o.get("final_price", "0")} EUR'
                         ),
                     ),
@@ -109,7 +109,7 @@ def register_routes(app, client, get_user_id):
                     ),
                 ),
                 Div(cls="mt-4")(
-                    A(href="/orders", cls="text-orange-600 hover:underline text-sm")(
+                    A(href="/orders", cls="text-green-600 hover:underline text-sm")(
                         "Back to orders"
                     ),
                 ),

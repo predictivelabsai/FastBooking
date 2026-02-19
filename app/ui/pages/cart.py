@@ -16,7 +16,7 @@ def register_routes(app, client, get_user_id):
             return layout(
                 H1(cls="text-2xl font-bold text-gray-800 mb-4")("Your Cart"),
                 P(cls="text-gray-500 py-8 text-center")("Your cart is empty."),
-                A(href="/", cls="text-orange-600 hover:underline")("Browse restaurants"),
+                A(href="/", cls="text-green-600 hover:underline")("Browse restaurants"),
                 title="Cart — FoodAngels",
             )
 
@@ -56,7 +56,7 @@ def register_routes(app, client, get_user_id):
                     *rows,
                     Div(cls="flex justify-between mt-3 pt-3 border-t border-gray-200")(
                         Span(cls="font-semibold text-gray-700")("Subtotal"),
-                        Span(cls="font-bold text-orange-600")(f"{total:.2f} EUR"),
+                        Span(cls="font-bold text-green-700")(f"{total:.2f} EUR"),
                     ),
                     Form(
                         hx_post=f"/cart/order/{rid}",
@@ -68,11 +68,11 @@ def register_routes(app, client, get_user_id):
                             type="text",
                             name="customer_message",
                             placeholder="Add a message (optional)",
-                            cls="w-full px-3 py-2 border border-gray-300 rounded mb-2 text-sm",
+                            cls="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none",
                         ),
                         Button(
                             type="submit",
-                            cls="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-medium",
+                            cls="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-full font-semibold",
                         )("Place Order"),
                     ),
                 )

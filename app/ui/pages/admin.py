@@ -39,21 +39,21 @@ def register_routes(app, client, get_admin_user_id):
                     Button(
                         hx_put="/admin/toggle-availability",
                         hx_target="body",
-                        cls="text-sm text-orange-600 hover:text-orange-800 underline",
+                        cls="text-sm text-green-600 hover:text-green-800 underline",
                     )("Toggle availability"),
                 ),
             ),
             Div(cls="grid grid-cols-1 md:grid-cols-3 gap-4")(
                 A(
                     href="/admin/products",
-                    cls="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition text-center",
+                    cls="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition text-center border-l-4 border-green-500",
                 )(
                     H3(cls="font-semibold text-gray-800")("Products"),
                     P(cls="text-gray-500 text-sm mt-1")("Manage your menu"),
                 ),
                 A(
                     href="/admin/orders",
-                    cls="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition text-center",
+                    cls="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition text-center border-l-4 border-green-500",
                 )(
                     H3(cls="font-semibold text-gray-800")("Orders"),
                     P(cls="text-gray-500 text-sm mt-1")("View and manage orders"),
@@ -98,7 +98,7 @@ def register_routes(app, client, get_admin_user_id):
                 H1(cls="text-2xl font-bold text-gray-800")("Products"),
                 A(
                     href="/admin",
-                    cls="text-orange-600 hover:underline text-sm",
+                    cls="text-green-600 hover:underline text-sm",
                 )("Back to dashboard"),
             ),
             # Add product form
@@ -162,7 +162,7 @@ def register_routes(app, client, get_admin_user_id):
                     ),
                     Button(
                         type="submit",
-                        cls="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded text-sm",
+                        cls="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm",
                     )("Add Product"),
                 ),
             ),
@@ -229,20 +229,20 @@ def register_routes(app, client, get_admin_user_id):
                     Button(
                         hx_put=f'/admin/orders/{o["id"]}/accept',
                         hx_target="body",
-                        cls="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1 rounded",
+                        cls="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded-full",
                     )("Accept"),
                     Button(
                         hx_put=f'/admin/orders/{o["id"]}/refuse',
                         hx_target="body",
-                        cls="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded",
-                    )("Refuse"),
+                        cls="border border-gray-300 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-50",
+                    )("Decline"),
                 ])
             elif o.get("status") == "accepted":
                 action_buttons.append(
                     Button(
                         hx_put=f'/admin/orders/{o["id"]}/done',
                         hx_target="body",
-                        cls="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded",
+                        cls="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded-full",
                     )("Mark Done")
                 )
 
@@ -279,7 +279,7 @@ def register_routes(app, client, get_admin_user_id):
         return layout(
             Div(cls="flex items-center justify-between mb-4")(
                 H1(cls="text-2xl font-bold text-gray-800")("Orders"),
-                A(href="/admin", cls="text-orange-600 hover:underline text-sm")(
+                A(href="/admin", cls="text-green-600 hover:underline text-sm")(
                     "Back to dashboard"
                 ),
             ),

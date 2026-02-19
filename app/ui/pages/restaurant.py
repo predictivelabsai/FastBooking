@@ -57,7 +57,7 @@ def register_routes(app, client):
         for cat_name, cat_products in categories.items():
             sections.append(
                 Div(cls="mb-6")(
-                    H3(cls="text-lg font-semibold text-gray-700 mb-3")(cat_name),
+                    H3(cls="text-lg font-semibold text-green-700 mb-3")(cat_name),
                     Div(cls="grid grid-cols-1 md:grid-cols-2 gap-4")(
                         *[product_card(p) for p in cat_products]
                     ),
@@ -72,7 +72,7 @@ def register_routes(app, client):
                 ),
                 P(cls="text-gray-500")(r.get("address", "")),
                 P(cls="text-gray-400 text-sm")(r.get("about", "")),
-                Div(cls="mt-4 bg-white rounded-lg p-4 shadow-sm max-w-xs")(
+                Div(cls="mt-4 bg-white rounded-xl p-4 shadow-sm max-w-xs border-t-4 border-green-500")(
                     H3(cls="font-semibold text-gray-700 mb-2")("Hours"),
                     *hours_rows if hours_rows else [P(cls="text-gray-400 text-sm")("No hours set")],
                 ),
