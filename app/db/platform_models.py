@@ -515,4 +515,3 @@ class NotificationOutbox(Base):
     send_after: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str] = mapped_column(Text, default="")
-

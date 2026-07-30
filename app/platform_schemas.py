@@ -82,4 +82,3 @@ class TenantModuleOut(BaseModel):
     module: str
     enabled: bool
     settings_json: dict[str, Any]
-
