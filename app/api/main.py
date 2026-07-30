@@ -14,7 +14,7 @@ from app.api.routers import (
 
 
 def create_api_app() -> FastAPI:
-    api = FastAPI(title="FoodAngels API", version="0.1.0")
+    api = FastAPI(title="FastBooking API", version="1.0.0")
 
     api.add_middleware(
         CORSMiddleware,

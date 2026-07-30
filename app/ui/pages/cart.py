@@ -17,7 +17,7 @@ def register_routes(app, client, get_user_id):
                 H1(cls="text-2xl font-bold text-gray-800 mb-4")("Your Cart"),
                 P(cls="text-gray-500 py-8 text-center")("Your cart is empty."),
                 A(href="/", cls="text-green-600 hover:underline")("Browse restaurants"),
-                title="Cart — FoodAngels",
+                title="Cart — FastBooking",
             )
 
         # Group items by restaurant
@@ -89,7 +89,7 @@ def register_routes(app, client, get_user_id):
                     cls="text-red-500 hover:text-red-700 text-sm",
                 )("Clear entire cart"),
             ),
-            title="Cart — FoodAngels",
+            title="Cart — FastBooking",
         )
 
     @app.post("/cart/add/{product_id}")

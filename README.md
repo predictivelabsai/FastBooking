@@ -64,7 +64,8 @@ available under `/api/docs`.
 
 Copy variable names from `.env.example`; never commit values. Production
 requires `DATABASE_URL`, `SESSION_SECRET`, Google OAuth credentials, Postmark,
-and the shared FastClinic API token. Stripe variables are placeholders only:
+and a dedicated FastBooking-to-FastClinic connector token. Stripe variables are
+placeholders only:
 the MVP remains pay-later and cannot capture funds.
 
 The root `Dockerfile` listens on `0.0.0.0:5023`, runs migrations before startup,

@@ -19,7 +19,7 @@ def register_routes(app, client, get_admin_user_id):
                 P(cls="text-gray-500 py-8 text-center")(
                     "No restaurant linked to this account."
                 ),
-                title="Admin — FoodAngels",
+                title="Admin — FastBooking",
             )
 
         avail_cls = "bg-green-500" if rest.get("available") else "bg-red-500"
@@ -57,7 +57,7 @@ def register_routes(app, client, get_admin_user_id):
                     P(cls="text-gray-500 text-sm mt-1")("View and manage orders"),
                 ),
             ),
-            title="Admin — FoodAngels",
+            title="Admin — FastBooking",
         )
 
     @app.put("/admin/toggle-availability")
@@ -185,7 +185,7 @@ def register_routes(app, client, get_admin_user_id):
                     ),
                 ),
             ),
-            title="Products — Admin — FoodAngels",
+            title="Products — Admin — FastBooking",
         )
 
     @app.post("/admin/products/add")
@@ -290,7 +290,7 @@ def register_routes(app, client, get_admin_user_id):
             )(
                 *cards if cards else [P(cls="text-gray-500 col-span-full text-center py-8")("No orders yet")]
             ),
-            title="Orders — Admin — FoodAngels",
+            title="Orders — Admin — FastBooking",
         )
 
     @app.put("/admin/orders/{order_id}/accept")

@@ -13,7 +13,7 @@ LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" class=
 
 
 # ── Layout shell ─────────────────────────────────────────────────────────
-def layout(*children, title: str = "FoodAngels"):
+def layout(*children, title: str = "FastBooking"):
     return (
         Title(title),
         Html(

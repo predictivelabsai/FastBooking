@@ -1,4 +1,4 @@
--- FoodAngels database schema
+-- FastBooking legacy restaurant commerce schema
 -- Target: PostgreSQL 14+
 -- All tables live in the "foodangels" schema within the "finespresso_db" database.
 

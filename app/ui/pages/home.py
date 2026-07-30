@@ -31,7 +31,7 @@ def register_routes(app, client):
             Div(id="restaurant-grid", cls="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4")(
                 *[restaurant_card(r) for r in restaurants]
             ),
-            title="FoodAngels — Home",
+            title="FastBooking — Home",
         )
 
     @app.get("/marketplace/search")

@@ -403,7 +403,7 @@ async def seed():
 
         # ── Info records ─────────────────────────────────────────────────
         db.add(ContactUs(email="support@foodangels.org", phone="+4500000000"))
-        db.add(UserAgreement(text="By using FoodAngels you agree to our terms of service.", commission=5))
+        db.add(UserAgreement(text="By using FastBooking you agree to our terms of service.", commission=5))
         db.add(PrivacyPolicy(text="We respect your privacy. Read our full policy at foodangels.org/privacy."))
 
         # ── Sample order ─────────────────────────────────────────────────

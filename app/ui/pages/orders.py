@@ -18,7 +18,7 @@ def register_routes(app, client, get_user_id):
                 H1(cls="text-2xl font-bold text-gray-800 mb-4")("Your Orders"),
                 P(cls="text-gray-500 py-8 text-center")("No orders yet."),
                 A(href="/", cls="text-green-600 hover:underline")("Browse restaurants"),
-                title="Orders — FoodAngels",
+                title="Orders — FastBooking",
             )
 
         return layout(
@@ -26,7 +26,7 @@ def register_routes(app, client, get_user_id):
             Div(cls="grid grid-cols-1 md:grid-cols-2 gap-4")(
                 *[order_card(o) for o in orders]
             ),
-            title="Orders — FoodAngels",
+            title="Orders — FastBooking",
         )
 
     @app.get("/orders/{order_id}")
@@ -114,7 +114,7 @@ def register_routes(app, client, get_user_id):
                     ),
                 ),
             ),
-            title=f'Order #{o.get("number_order", o["id"])} — FoodAngels',
+            title=f'Order #{o.get("number_order", o["id"])} — FastBooking',
         )
 
     @app.get("/orders/{order_id}/status")

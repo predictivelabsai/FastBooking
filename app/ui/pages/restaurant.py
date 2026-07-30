@@ -81,5 +81,5 @@ def register_routes(app, client):
                 H2(cls="text-xl font-bold text-gray-800 mb-4")("Menu"),
                 *sections if sections else [P(cls="text-gray-500")("No products available")],
             ),
-            title=f"{r['name']} — FoodAngels",
+            title=f"{r['name']} — FastBooking",
         )
