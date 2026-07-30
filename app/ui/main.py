@@ -3,20 +3,19 @@
 from __future__ import annotations
 
 from fasthtml.common import fast_app
-from starlette.responses import RedirectResponse
-
 from sqlalchemy import select
 
 from app.config import settings
 from app.db.engine import async_session_factory
 from app.db.models import User
 from app.ui.client import DbClient, HttpClient
-from app.ui.pages import admin, cart, home, orders, restaurant
+from app.ui.pages import admin, cart, home, orders, platform, restaurant
 
 
 def create_ui_app():
     app, rt = fast_app(
         pico=False,
+        secret_key=settings.SESSION_SECRET,
         hdrs=(
             # TailwindCSS CDN + HTMX already injected via layout shell
         ),
@@ -54,6 +53,7 @@ def create_ui_app():
             return result.scalar_one().id
 
     # register page routes
+    platform.register_routes(app)
     home.register_routes(app, client)
     restaurant.register_routes(app, client)
     cart.register_routes(app, client, get_user_id)

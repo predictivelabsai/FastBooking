@@ -55,7 +55,9 @@ async def create_product(
     user: User = Depends(get_current_restaurant_user),
 ):
     rest = await _get_restaurant(user, db)
-    product = Product(restaurant_id=rest.id, **body.model_dump())
+    product = Product(
+        tenant_id=rest.tenant_id, restaurant_id=rest.id, **body.model_dump()
+    )
     db.add(product)
     await db.commit()
     await db.refresh(product)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from fasthtml.common import *
 
-
 # ── Logo SVG ────────────────────────────────────────────────────────────
 LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" class="w-8 h-8">
   <path d="M20 36 C10 28 2 22 2 14 A10 10 0 0 1 20 8 A10 10 0 0 1 38 14 C38 22 30 28 20 36Z" fill="#16a34a"/>

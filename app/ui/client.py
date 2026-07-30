@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import httpx
 from sqlalchemy import select
@@ -15,10 +15,10 @@ from app.db.models import (
     OrderProduct,
     Product,
     Restaurant,
-    User,
     UserCart,
     UserFavoriteRestaurant,
 )
+from app.db.platform_models import Tenant
 
 
 @runtime_checkable
@@ -157,6 +157,10 @@ def _order_to_dict(o: Order) -> dict:
 class DbClient:
     """Direct-to-DB implementation — used in monolith mode."""
 
+    async def _tenant_id(self, db: AsyncSession) -> int:
+        result = await db.execute(select(Tenant.id).order_by(Tenant.id).limit(1))
+        return result.scalar_one()
+
     async def list_restaurants(self, q: str = "") -> list[dict]:
         async with async_session_factory() as db:
             stmt = select(Restaurant).order_by(Restaurant.name)
@@ -198,25 +202,40 @@ class DbClient:
 
     async def get_cart(self, user_id: int) -> list[dict]:
         async with async_session_factory() as db:
-            result = await db.execute(select(UserCart).where(UserCart.user_id == user_id))
+            tenant_id = await self._tenant_id(db)
+            result = await db.execute(
+                select(UserCart).where(
+                    UserCart.user_id == user_id, UserCart.tenant_id == tenant_id
+                )
+            )
             cart = result.scalar_one_or_none()
             return cart.data if cart and cart.data else []
 
     async def update_cart(self, user_id: int, items: list[dict]) -> list[dict]:
         async with async_session_factory() as db:
-            result = await db.execute(select(UserCart).where(UserCart.user_id == user_id))
+            tenant_id = await self._tenant_id(db)
+            result = await db.execute(
+                select(UserCart).where(
+                    UserCart.user_id == user_id, UserCart.tenant_id == tenant_id
+                )
+            )
             cart = result.scalar_one_or_none()
             if cart:
                 cart.data = items
             else:
-                cart = UserCart(user_id=user_id, data=items)
+                cart = UserCart(tenant_id=tenant_id, user_id=user_id, data=items)
                 db.add(cart)
             await db.commit()
             return items
 
     async def clear_cart(self, user_id: int) -> list[dict]:
         async with async_session_factory() as db:
-            result = await db.execute(select(UserCart).where(UserCart.user_id == user_id))
+            tenant_id = await self._tenant_id(db)
+            result = await db.execute(
+                select(UserCart).where(
+                    UserCart.user_id == user_id, UserCart.tenant_id == tenant_id
+                )
+            )
             cart = result.scalar_one_or_none()
             if cart:
                 cart.data = []
@@ -227,6 +246,9 @@ class DbClient:
         from decimal import Decimal
 
         async with async_session_factory() as db:
+            restaurant = await db.get(Restaurant, data["restaurant_id"])
+            if not restaurant:
+                return {}
             total = Decimal("0")
             order_products = []
             for item in data["products"]:
@@ -249,6 +271,7 @@ class DbClient:
                 )
 
             order = Order(
+                tenant_id=restaurant.tenant_id,
                 user_id=user_id,
                 restaurant_id=data["restaurant_id"],
                 amount=total,
@@ -311,7 +334,14 @@ class DbClient:
 
     async def add_favorite(self, user_id: int, restaurant_id: int) -> None:
         async with async_session_factory() as db:
-            fav = UserFavoriteRestaurant(user_id=user_id, restaurant_id=restaurant_id)
+            restaurant = await db.get(Restaurant, restaurant_id)
+            if not restaurant:
+                return
+            fav = UserFavoriteRestaurant(
+                tenant_id=restaurant.tenant_id,
+                user_id=user_id,
+                restaurant_id=restaurant_id,
+            )
             db.add(fav)
             await db.commit()
 
@@ -348,7 +378,9 @@ class DbClient:
             rest = await self._get_restaurant_for_user(db, user_id)
             if not rest:
                 return {}
-            product = Product(restaurant_id=rest.id, **data)
+            product = Product(
+                tenant_id=rest.tenant_id, restaurant_id=rest.id, **data
+            )
             db.add(product)
             await db.commit()
             await db.refresh(product)

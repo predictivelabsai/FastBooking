@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-import asyncio
+from contextlib import asynccontextmanager
+
 import uvicorn
 from starlette.applications import Starlette
-from starlette.routing import Mount
+from starlette.routing import Mount, Route
 
 from app.api.main import create_api_app
+from app.config import settings
 from app.db.base import Base
 from app.db.engine import engine
-from app.config import settings
+from app.health import healthz, readyz
 from app.ui.main import create_ui_app
 
 
@@ -23,21 +25,31 @@ async def create_schema():
         await conn.run_sync(Base.metadata.create_all)
 
 
+@asynccontextmanager
+async def lifespan(_app):
+    if settings.ENVIRONMENT != "production":
+        await create_schema()
+    yield
+
+
 api_app = create_api_app()
 ui_app = create_ui_app()
 
 app = Starlette(
+    lifespan=lifespan,
     routes=[
+        Route("/healthz", healthz),
+        Route("/readyz", readyz),
         Mount("/api", app=api_app),
         Mount("/", app=ui_app),
     ],
 )
 
 
-@app.on_event("startup")
-async def startup():
-    await create_schema()
-
-
 if __name__ == "__main__":
-    uvicorn.run("app.main_monolith:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "app.main_monolith:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.ENVIRONMENT == "development",
+    )

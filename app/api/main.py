@@ -1,7 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import admin, cart, favorites, info, orders, products, restaurants
+from app.api.routers import (
+    admin,
+    cart,
+    favorites,
+    info,
+    orders,
+    platform,
+    products,
+    restaurants,
+)
 
 
 def create_api_app() -> FastAPI:
@@ -22,5 +31,6 @@ def create_api_app() -> FastAPI:
     api.include_router(favorites.router, prefix="/v0/favorites", tags=["favorites"])
     api.include_router(admin.router, prefix="/v0/admin", tags=["admin"])
     api.include_router(info.router, prefix="/v0/info", tags=["info"])
+    api.include_router(platform.router, prefix="/v1", tags=["platform"])
 
     return api

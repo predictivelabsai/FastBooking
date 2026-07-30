@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_user, get_db
-from app.db.models import User, UserFavoriteRestaurant
+from app.db.models import Restaurant, User, UserFavoriteRestaurant
 from app.schemas import FavoriteAdd, FavoriteOut
 
 router = APIRouter()
@@ -41,7 +41,14 @@ async def add_favorite(
     if result.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Already a favorite")
 
-    fav = UserFavoriteRestaurant(user_id=user.id, restaurant_id=body.restaurant_id)
+    restaurant = await db.get(Restaurant, body.restaurant_id)
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    fav = UserFavoriteRestaurant(
+        tenant_id=restaurant.tenant_id,
+        user_id=user.id,
+        restaurant_id=body.restaurant_id,
+    )
     db.add(fav)
     await db.commit()
     return {"status": "added"}

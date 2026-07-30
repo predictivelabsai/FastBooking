@@ -23,6 +23,8 @@ async def create_order(
     # resolve products and compute amount
     total = Decimal("0")
     order_products: list[OrderProduct] = []
+    restaurant_id: int | None = None
+    tenant_id: int | None = None
     for item in body.products:
         result = await db.execute(select(Product).where(Product.id == item.product_id))
         product = result.scalar_one_or_none()
@@ -33,6 +35,11 @@ async def create_order(
                 status_code=400,
                 detail=f"Insufficient quantity for {product.name}",
             )
+        if restaurant_id is None:
+            restaurant_id = product.restaurant_id
+            tenant_id = product.tenant_id
+        if product.restaurant_id != body.restaurant_id or product.restaurant_id != restaurant_id:
+            raise HTTPException(status_code=400, detail="Order items must belong to one restaurant")
         line_total = product.current_price * item.quantity
         total += line_total
         order_products.append(
@@ -46,6 +53,7 @@ async def create_order(
         )
 
     order = Order(
+        tenant_id=tenant_id,
         user_id=user.id,
         restaurant_id=body.restaurant_id,
         amount=total,

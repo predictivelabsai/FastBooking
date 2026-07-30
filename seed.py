@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import datetime
 from decimal import Decimal
 
 from sqlalchemy import text
 
 from app.config import settings
 from app.db.base import Base
-from app.db.engine import engine, async_session_factory
+from app.db.engine import async_session_factory, engine
 from app.db.models import (
     ContactUs,
     Order,
@@ -22,6 +23,19 @@ from app.db.models import (
     UserAgreement,
     UserCart,
 )
+from app.db.platform_models import (
+    ClinicConnector,
+    HotelRoomType,
+    Location,
+    Membership,
+    Offering,
+    Resource,
+    ScheduledEvent,
+    Tenant,
+    TenantModule,
+    TicketType,
+    TrialEntitlement,
+)
 
 
 async def seed():
@@ -31,6 +45,31 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session_factory() as db:
+        # ── Tenant and admin-configurable modules ────────────────────────
+        now = datetime.datetime.now(datetime.timezone.utc)
+        tenant = Tenant(
+            slug="fastbooking-demo",
+            name="FastBooking Demo",
+            status="trial",
+            timezone="Europe/Tallinn",
+            currency="EUR",
+        )
+        db.add(tenant)
+        await db.flush()
+        for module in ("restaurant", "hotel", "clinic", "events"):
+            db.add(TenantModule(tenant_id=tenant.id, module=module, enabled=True))
+
+        db.add(
+            TrialEntitlement(
+                tenant_id=tenant.id,
+                starts_at=now,
+                ends_at=now + datetime.timedelta(days=14),
+                booking_limit=100,
+                order_limit=100,
+                enforcement="soft",
+            )
+        )
+
         # ── Users ────────────────────────────────────────────────────────
         customer = User(
             email="customer@demo.com",
@@ -66,9 +105,76 @@ async def seed():
         )
         db.add_all([customer, owner1, owner2, owner3])
         await db.flush()
+        db.add_all(
+            [
+                Membership(tenant_id=tenant.id, user_id=owner1.id, role="owner"),
+                Membership(tenant_id=tenant.id, user_id=owner2.id, role="admin"),
+                Membership(tenant_id=tenant.id, user_id=owner3.id, role="staff"),
+            ]
+        )
 
         # ── Restaurants ──────────────────────────────────────────────────
+        locations = [
+            Location(
+                tenant_id=tenant.id,
+                slug="green-bowl",
+                name="Green Bowl",
+                address="123 Health Street",
+                city="Copenhagen",
+                country="Denmark",
+                timezone="Europe/Copenhagen",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="baker-street",
+                name="Baker Street Bakery",
+                address="221B Baker Street",
+                city="Copenhagen",
+                country="Denmark",
+                timezone="Europe/Copenhagen",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="pizza-palace",
+                name="Pizza Palace",
+                address="45 Margherita Lane",
+                city="Copenhagen",
+                country="Denmark",
+                timezone="Europe/Copenhagen",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="harbour-hotel",
+                name="Harbour Hotel",
+                address="8 Marina Way",
+                city="Tallinn",
+                country="Estonia",
+                timezone="Europe/Tallinn",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="city-clinic",
+                name="City Private Clinic",
+                address="21 Health Avenue",
+                city="Tallinn",
+                country="Estonia",
+                timezone="Europe/Tallinn",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="north-arena",
+                name="North Arena",
+                address="1 Concert Square",
+                city="Tallinn",
+                country="Estonia",
+                timezone="Europe/Tallinn",
+            ),
+        ]
+        db.add_all(locations)
+        await db.flush()
         r1 = Restaurant(
+            tenant_id=tenant.id,
+            location_id=locations[0].id,
             user_id=owner1.id,
             name="Green Bowl",
             address="123 Health Street",
@@ -82,6 +188,8 @@ async def seed():
             available=True,
         )
         r2 = Restaurant(
+            tenant_id=tenant.id,
+            location_id=locations[1].id,
             user_id=owner2.id,
             name="Baker Street Bakery",
             address="221B Baker Street",
@@ -95,6 +203,8 @@ async def seed():
             available=True,
         )
         r3 = Restaurant(
+            tenant_id=tenant.id,
+            location_id=locations[2].id,
             user_id=owner3.id,
             name="Pizza Palace",
             address="45 Margherita Lane",
@@ -110,9 +220,129 @@ async def seed():
         db.add_all([r1, r2, r3])
         await db.flush()
 
-        # ── Restaurant Hours ─────────────────────────────────────────────
-        import datetime
+        # ── Shared booking inventory for all enabled modules ─────────────
+        for restaurant, location in zip([r1, r2, r3], locations[:3], strict=True):
+            for number, capacity in enumerate((2, 4, 4, 6), 1):
+                db.add(
+                    Resource(
+                        tenant_id=tenant.id,
+                        location_id=location.id,
+                        module="restaurant",
+                        slug=f"table-{number}",
+                        name=f"Table {number}",
+                        resource_type="table",
+                        capacity=capacity,
+                    )
+                )
 
+        hotel_offering = Offering(
+            tenant_id=tenant.id,
+            location_id=locations[3].id,
+            module="hotel",
+            slug="standard-room",
+            name="Standard harbour room",
+            description="A bright double room with breakfast.",
+            capacity=2,
+            price=Decimal("119.00"),
+        )
+        clinic_offering = Offering(
+            tenant_id=tenant.id,
+            location_id=locations[4].id,
+            module="clinic",
+            slug="initial-consultation",
+            name="Initial consultation",
+            description="Scheduling only; clinical records remain in FastClinic.",
+            duration_minutes=30,
+            price=Decimal("75.00"),
+            settings_json={"external_id": "initial-consultation"},
+        )
+        event_offering = Offering(
+            tenant_id=tenant.id,
+            location_id=locations[5].id,
+            module="events",
+            slug="summer-sessions",
+            name="Summer Sessions",
+            description="An evening of live music at North Arena.",
+            capacity=800,
+            price=Decimal("39.00"),
+        )
+        db.add_all([hotel_offering, clinic_offering, event_offering])
+        await db.flush()
+        db.add(
+            HotelRoomType(
+                tenant_id=tenant.id,
+                location_id=locations[3].id,
+                offering_id=hotel_offering.id,
+                code="STANDARD",
+                name="Standard room",
+                occupancy=2,
+                units=20,
+                nightly_rate=Decimal("119.00"),
+            )
+        )
+        db.add(
+            Resource(
+                tenant_id=tenant.id,
+                location_id=locations[4].id,
+                module="clinic",
+                slug="practitioner-1",
+                name="Dr Demo",
+                resource_type="practitioner",
+                capacity=1,
+                external_id="1",
+            )
+        )
+        db.add(
+            ClinicConnector(
+                tenant_id=tenant.id,
+                location_id=locations[4].id,
+                base_url="https://clinic.fastsme.com",
+                secret_env_name="FASTCLINIC_API_TOKEN",
+            )
+        )
+        scheduled_event = ScheduledEvent(
+            tenant_id=tenant.id,
+            location_id=locations[5].id,
+            offering_id=event_offering.id,
+            slug="summer-sessions-2026",
+            name="Summer Sessions 2026",
+            starts_at=datetime.datetime(
+                2026, 9, 15, 19, 0, tzinfo=datetime.timezone.utc
+            ),
+            ends_at=datetime.datetime(
+                2026, 9, 15, 23, 0, tzinfo=datetime.timezone.utc
+            ),
+            sales_open_at=now,
+            sales_close_at=datetime.datetime(
+                2026, 9, 15, 18, 0, tzinfo=datetime.timezone.utc
+            ),
+            status="published",
+        )
+        db.add(scheduled_event)
+        await db.flush()
+        db.add_all(
+            [
+                TicketType(
+                    tenant_id=tenant.id,
+                    event_id=scheduled_event.id,
+                    code="GENERAL",
+                    name="General admission",
+                    price=Decimal("39.00"),
+                    capacity=700,
+                ),
+                TicketType(
+                    tenant_id=tenant.id,
+                    event_id=scheduled_event.id,
+                    code="VIP",
+                    name="VIP",
+                    price=Decimal("99.00"),
+                    capacity=100,
+                    max_per_booking=6,
+                ),
+            ]
+        )
+
+        # ── Restaurant Hours ─────────────────────────────────────────────
         for rest in [r1, r2, r3]:
             for day in range(7):
                 work = day < 6  # closed Sunday for r1/r2/r3 variety
@@ -149,6 +379,7 @@ async def seed():
         for row in products_data:
             db.add(
                 Product(
+                    tenant_id=tenant.id,
                     restaurant_id=row[0],
                     name=row[1],
                     description=row[2],
@@ -168,7 +399,7 @@ async def seed():
             )
 
         # ── Cart for demo customer ───────────────────────────────────────
-        db.add(UserCart(user_id=customer.id, data=[]))
+        db.add(UserCart(tenant_id=tenant.id, user_id=customer.id, data=[]))
 
         # ── Info records ─────────────────────────────────────────────────
         db.add(ContactUs(email="support@foodangels.org", phone="+4500000000"))
@@ -177,6 +408,7 @@ async def seed():
 
         # ── Sample order ─────────────────────────────────────────────────
         order = Order(
+            tenant_id=tenant.id,
             user_id=customer.id,
             restaurant_id=r1.id,
             amount=Decimal("20.50"),

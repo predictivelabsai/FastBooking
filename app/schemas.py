@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from decimal import Decimal
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 

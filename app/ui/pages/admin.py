@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 from fasthtml.common import *
 
-from app.ui.components import layout, product_card, status_badge
+from app.ui.components import layout, status_badge
 
 
 def register_routes(app, client, get_admin_user_id):

@@ -8,7 +8,7 @@ from app.ui.components import layout, restaurant_card
 
 
 def register_routes(app, client):
-    @app.get("/")
+    @app.get("/marketplace")
     async def home(request):
         restaurants = await client.list_restaurants()
         return layout(
@@ -20,7 +20,7 @@ def register_routes(app, client):
                         type="search",
                         name="q",
                         placeholder="Search restaurants...",
-                        hx_get="/search",
+                        hx_get="/marketplace/search",
                         hx_trigger="input changed delay:300ms, search",
                         hx_target="#restaurant-grid",
                         hx_swap="innerHTML",
@@ -34,7 +34,7 @@ def register_routes(app, client):
             title="FoodAngels — Home",
         )
 
-    @app.get("/search")
+    @app.get("/marketplace/search")
     async def search(request, q: str = ""):
         restaurants = await client.list_restaurants(q=q)
         return Div(id="restaurant-grid")(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fasthtml.common import *
 
-from app.ui.components import layout, status_badge
+from app.ui.components import layout
 
 
 def register_routes(app, client, get_user_id):

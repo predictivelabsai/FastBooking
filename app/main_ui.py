@@ -14,4 +14,9 @@ from app.ui.main import create_ui_app
 app = create_ui_app()
 
 if __name__ == "__main__":
-    uvicorn.run("app.main_ui:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run(
+        "app.main_ui:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.ENVIRONMENT == "development",
+    )

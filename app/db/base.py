@@ -1,4 +1,4 @@
-from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
+from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.engine import async_session_factory
 from app.db.models import User
+from app.db.platform_models import Tenant
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -29,6 +30,12 @@ async def get_current_user(db: AsyncSession = Depends(get_db)) -> User:
         result = await db.execute(select(User).limit(1))
         user = result.scalar_one()
     return user
+
+
+async def get_current_tenant(db: AsyncSession = Depends(get_db)) -> Tenant:
+    """Resolve the demo tenant until session-backed tenant selection is enabled."""
+    result = await db.execute(select(Tenant).order_by(Tenant.id).limit(1))
+    return result.scalar_one()
 
 
 async def get_current_restaurant_user(db: AsyncSession = Depends(get_db)) -> User:

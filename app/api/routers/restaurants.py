@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db
-from app.db.models import Restaurant, Product
+from app.db.models import Restaurant
 from app.schemas import RestaurantDetail, RestaurantOut
 
 router = APIRouter()

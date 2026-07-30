@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -49,7 +48,7 @@ class User(Base):
     # relationships
     restaurant: Mapped[Optional[Restaurant]] = relationship(back_populates="user", uselist=False)
     orders: Mapped[list[Order]] = relationship(back_populates="user")
-    cart: Mapped[Optional[UserCart]] = relationship(back_populates="user", uselist=False)
+    carts: Mapped[list[UserCart]] = relationship(back_populates="user")
     favorites: Mapped[list[UserFavoriteRestaurant]] = relationship(back_populates="user")
 
 
@@ -58,6 +57,12 @@ class Restaurant(Base):
     __tablename__ = "restaurants"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.locations.id", ondelete="CASCADE"), unique=True
+    )
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey(f"{SCHEMA}.users.id"))
     name: Mapped[str] = mapped_column(String(200), default="")
     address: Mapped[str] = mapped_column(String(255), default="")
@@ -101,6 +106,9 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
     restaurant_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.restaurants.id"))
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
@@ -135,6 +143,9 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.users.id"))
     restaurant_id: Mapped[Optional[int]] = mapped_column(ForeignKey(f"{SCHEMA}.restaurants.id"))
     number_order: Mapped[Optional[int]] = mapped_column(
@@ -150,6 +161,10 @@ class Order(Base):
     commission: Mapped[Optional[int]] = mapped_column(SmallInteger)
     pickup_time: Mapped[Optional[str]] = mapped_column(String(200))
     customer_message: Mapped[Optional[str]] = mapped_column(String(200))
+    fulfillment_type: Mapped[str] = mapped_column(String(30), default="pickup")
+    booking_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey(f"{SCHEMA}.bookings.id", ondelete="SET NULL"), index=True
+    )
 
     user: Mapped[User] = relationship(back_populates="orders")
     restaurant: Mapped[Optional[Restaurant]] = relationship(back_populates="orders")
@@ -178,6 +193,9 @@ class Code(Base):
     __tablename__ = "codes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
     name: Mapped[str] = mapped_column(String(50))
     code: Mapped[str] = mapped_column(String(10), unique=True)
     start_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True))
@@ -192,23 +210,33 @@ class Code(Base):
 # ── User Cart ────────────────────────────────────────────────────────────
 class UserCart(Base):
     __tablename__ = "user_carts"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "user_id", name="uq_user_carts_tenant_user"),
+        {"schema": SCHEMA},
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.users.id"), unique=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.users.id"))
     data: Mapped[Any] = mapped_column(JSON, default=list)
 
-    user: Mapped[User] = relationship(back_populates="cart")
+    user: Mapped[User] = relationship(back_populates="carts")
 
 
 # ── User Favorite Restaurants ────────────────────────────────────────────
 class UserFavoriteRestaurant(Base):
     __tablename__ = "user_favorite_restaurants"
     __table_args__ = (
-        UniqueConstraint("user_id", "restaurant_id"),
+        UniqueConstraint("tenant_id", "user_id", "restaurant_id"),
         {"schema": SCHEMA},
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{SCHEMA}.tenants.id", ondelete="CASCADE"), index=True
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.users.id"))
     restaurant_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.restaurants.id"))
 
