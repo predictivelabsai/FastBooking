@@ -25,6 +25,7 @@ from app.db.platform_models import (
     TrialEntitlement,
 )
 from app.services.booking import BookingError, cancel_booking
+from app.ui.seo import seo_meta
 
 MODULE_LABELS = {
     "restaurant": ("Restaurants", "Food ordering, dine-in pre-orders, and tables"),
@@ -45,14 +46,23 @@ CSS = """
 """
 
 
-def _head(title: str):
+def _head(
+    title: str,
+    *,
+    seo_path: str | None = None,
+    description: str = (
+        "Configurable bookings for restaurants, hotels, private clinics, and events."
+    ),
+):
     return Head(
         Title(title),
         Meta(charset="utf-8"),
         Meta(name="viewport", content="width=device-width, initial-scale=1"),
-        Meta(
-            name="description",
-            content="Configurable bookings for restaurants, hotels, private clinics, and events.",
+        Meta(name="description", content=description),
+        *(
+            seo_meta(path=seo_path, title=title, description=description)
+            if seo_path
+            else ()
         ),
         Link(
             rel="icon",
@@ -82,7 +92,10 @@ def landing_page(message: str = ""):
         for index, (label, description) in enumerate(MODULE_LABELS.values(), 1)
     ]
     return Html(
-        _head("FastBooking · Configurable bookings for service businesses"),
+        _head(
+            "FastBooking · Configurable bookings for service businesses",
+            seo_path="/",
+        ),
         Body(
             Nav(
                 A(Span("F", cls="mark"), "FastBooking", href="/", cls="brand"),
@@ -182,7 +195,14 @@ def register_routes(app):
     @app.get("/developers")
     async def developers():
         return Html(
-            _head("FastBooking API · Developers"),
+            _head(
+                "FastBooking API · Developers",
+                seo_path="/developers",
+                description=(
+                    "Build tenant-scoped restaurant, hotel, clinic, and event "
+                    "booking integrations with the FastBooking API."
+                ),
+            ),
             Body(
                 Main(
                     A("FastBooking", href="/", cls="brand"),

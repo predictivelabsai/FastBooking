@@ -10,6 +10,7 @@ from app.db.engine import async_session_factory
 from app.db.models import User
 from app.ui.client import DbClient, HttpClient
 from app.ui.pages import admin, cart, home, orders, platform, restaurant
+from app.ui.seo import register_seo_routes
 
 
 def create_ui_app():
@@ -53,6 +54,7 @@ def create_ui_app():
             return result.scalar_one().id
 
     # register page routes
+    register_seo_routes(app)
     platform.register_routes(app)
     home.register_routes(app, client)
     restaurant.register_routes(app, client)
