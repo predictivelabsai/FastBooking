@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import hashlib
 from decimal import Decimal
 
 from sqlalchemy import text
@@ -24,17 +25,21 @@ from app.db.models import (
     UserCart,
 )
 from app.db.platform_models import (
+    Booking,
     ClinicConnector,
+    Guest,
     HotelRoomType,
     Location,
     Membership,
+    MembershipPlan,
     Offering,
+    PaymentTransaction,
+    RecreationProgramme,
     Resource,
     ScheduledEvent,
     Tenant,
     TenantModule,
     TicketType,
-    TrialEntitlement,
 )
 
 
@@ -50,25 +55,15 @@ async def seed():
         tenant = Tenant(
             slug="fastbooking-demo",
             name="FastBooking Demo",
-            status="trial",
-            timezone="Europe/Tallinn",
-            currency="EUR",
+            status="active",
+            timezone="Pacific/Auckland",
+            currency="NZD",
+            locale="en-NZ",
         )
         db.add(tenant)
         await db.flush()
-        for module in ("restaurant", "hotel", "clinic", "events"):
+        for module in ("restaurant", "hotel", "clinic", "events", "recreation"):
             db.add(TenantModule(tenant_id=tenant.id, module=module, enabled=True))
-
-        db.add(
-            TrialEntitlement(
-                tenant_id=tenant.id,
-                starts_at=now,
-                ends_at=now + datetime.timedelta(days=14),
-                booking_limit=100,
-                order_limit=100,
-                enforcement="soft",
-            )
-        )
 
         # ── Users ────────────────────────────────────────────────────────
         customer = User(
@@ -107,9 +102,9 @@ async def seed():
         await db.flush()
         db.add_all(
             [
-                Membership(tenant_id=tenant.id, user_id=owner1.id, role="owner"),
-                Membership(tenant_id=tenant.id, user_id=owner2.id, role="admin"),
-                Membership(tenant_id=tenant.id, user_id=owner3.id, role="staff"),
+                Membership(tenant_id=tenant.id, user_id=owner1.id, role="admin"),
+                Membership(tenant_id=tenant.id, user_id=owner2.id, role="staff"),
+                Membership(tenant_id=tenant.id, user_id=owner3.id, role="viewer"),
             ]
         )
 
@@ -168,6 +163,15 @@ async def seed():
                 city="Tallinn",
                 country="Estonia",
                 timezone="Europe/Tallinn",
+            ),
+            Location(
+                tenant_id=tenant.id,
+                slug="queenstown-events-centre",
+                name="Queenstown Events Centre",
+                address="Joe O'Connell Drive",
+                city="Queenstown",
+                country="New Zealand",
+                timezone="Pacific/Auckland",
             ),
         ]
         db.add_all(locations)
@@ -338,6 +342,197 @@ async def seed():
                     price=Decimal("99.00"),
                     capacity=100,
                     max_per_booking=6,
+                ),
+            ]
+        )
+
+        recreation_offerings = [
+            Offering(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                module="recreation",
+                slug="learn-to-swim-kea-2",
+                name="Learn to Swim · Kea 2",
+                description="Term-based learn-to-swim programme.",
+                capacity=8,
+                price=Decimal("145.00"),
+            ),
+            Offering(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                module="recreation",
+                slug="court-hire",
+                name="Indoor court hire",
+                description="Casual or club court booking.",
+                duration_minutes=60,
+                capacity=1,
+                price=Decimal("48.00"),
+            ),
+        ]
+        db.add_all(recreation_offerings)
+        await db.flush()
+        teaching_pool = Resource(
+            tenant_id=tenant.id,
+            location_id=locations[6].id,
+            module="recreation",
+            slug="teaching-pool",
+            name="Teaching pool",
+            resource_type="pool",
+            capacity=2,
+            attributes={"lanes": 2, "accessible": True},
+        )
+        courts = [
+            Resource(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                module="recreation",
+                slug=f"court-{number}",
+                name=f"Indoor court {number}",
+                resource_type="court",
+                capacity=1,
+            )
+            for number in range(1, 3)
+        ]
+        db.add_all([teaching_pool, *courts])
+        await db.flush()
+        db.add(
+            RecreationProgramme(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                offering_id=recreation_offerings[0].id,
+                resource_id=teaching_pool.id,
+                code="LTS-KEA2-T3",
+                name="Learn to Swim · Kea 2 · Term 3",
+                category="learn_to_swim",
+                starts_at=now + datetime.timedelta(days=7),
+                ends_at=now + datetime.timedelta(days=77),
+                enrolment_opens_at=now - datetime.timedelta(days=14),
+                enrolment_closes_at=now + datetime.timedelta(days=6),
+                capacity=8,
+                status="published",
+                schedule_json={"week_day": 2, "time": "09:00", "sessions": 10},
+            )
+        )
+        db.add_all(
+            [
+                MembershipPlan(
+                    tenant_id=tenant.id,
+                    location_id=locations[6].id,
+                    code="GYM-MONTHLY",
+                    name="Gym monthly",
+                    description="Monthly gym and group fitness access.",
+                    billing_interval="month",
+                    price=Decimal("69.00"),
+                    access_rules={"areas": ["gym", "group_fitness"]},
+                ),
+                MembershipPlan(
+                    tenant_id=tenant.id,
+                    location_id=locations[6].id,
+                    code="POOL-10",
+                    name="Ten-swim pass",
+                    description="Ten casual aquatic visits.",
+                    billing_interval="visit",
+                    price=Decimal("62.00"),
+                    duration_days=180,
+                    included_visits=10,
+                    access_rules={"areas": ["aquatics"]},
+                ),
+            ]
+        )
+
+        # ── Representative dashboard activity ──────────────────────────
+        recreation_guest = Guest(
+            tenant_id=tenant.id,
+            name="Aroha Thompson",
+            email="aroha@example.nz",
+            phone="+64 21 555 0142",
+        )
+        event_guest = Guest(
+            tenant_id=tenant.id,
+            name="Noah Williams",
+            email="noah@example.nz",
+        )
+        db.add_all([recreation_guest, event_guest])
+        await db.flush()
+        sample_bookings = [
+            Booking(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                guest_id=recreation_guest.id,
+                offering_id=recreation_offerings[0].id,
+                module="recreation",
+                public_reference="FB-DEMO-LTS",
+                status="confirmed",
+                starts_at=now + datetime.timedelta(days=7),
+                ends_at=now + datetime.timedelta(days=77),
+                quantity=1,
+                currency="NZD",
+                subtotal=Decimal("145.00"),
+                total=Decimal("145.00"),
+                manage_token_hash=hashlib.sha256(b"seed-lts").hexdigest(),
+                booking_metadata={"programme": "LTS-KEA2-T3"},
+            ),
+            Booking(
+                tenant_id=tenant.id,
+                location_id=locations[6].id,
+                guest_id=recreation_guest.id,
+                offering_id=recreation_offerings[1].id,
+                module="recreation",
+                public_reference="FB-DEMO-COURT",
+                status="confirmed",
+                starts_at=now + datetime.timedelta(days=1, hours=2),
+                ends_at=now + datetime.timedelta(days=1, hours=3),
+                quantity=1,
+                currency="NZD",
+                subtotal=Decimal("48.00"),
+                total=Decimal("48.00"),
+                manage_token_hash=hashlib.sha256(b"seed-court").hexdigest(),
+                booking_metadata={"resource": "court-1"},
+            ),
+            Booking(
+                tenant_id=tenant.id,
+                location_id=locations[5].id,
+                guest_id=event_guest.id,
+                offering_id=event_offering.id,
+                module="events",
+                public_reference="FB-DEMO-EVENT",
+                status="pending",
+                starts_at=scheduled_event.starts_at,
+                ends_at=scheduled_event.ends_at,
+                quantity=2,
+                currency="NZD",
+                subtotal=Decimal("78.00"),
+                total=Decimal("78.00"),
+                manage_token_hash=hashlib.sha256(b"seed-event").hexdigest(),
+                booking_metadata={"event": scheduled_event.slug},
+            ),
+        ]
+        db.add_all(sample_bookings)
+        await db.flush()
+        db.add_all(
+            [
+                PaymentTransaction(
+                    tenant_id=tenant.id,
+                    guest_id=recreation_guest.id,
+                    booking_id=sample_bookings[0].id,
+                    provider="onsite",
+                    external_id="seed-payment-lts",
+                    status="paid",
+                    amount=Decimal("145.00"),
+                    currency="NZD",
+                    payment_method="eftpos",
+                ),
+                PaymentTransaction(
+                    tenant_id=tenant.id,
+                    guest_id=recreation_guest.id,
+                    booking_id=sample_bookings[1].id,
+                    provider="onsite",
+                    external_id="seed-payment-court",
+                    status="refunded",
+                    amount=Decimal("48.00"),
+                    refunded_amount=Decimal("48.00"),
+                    currency="NZD",
+                    payment_method="card",
                 ),
             ]
         )

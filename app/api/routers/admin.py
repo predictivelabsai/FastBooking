@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_restaurant_user, get_db
+from app.api.deps import get_current_admin_user, get_db
 from app.db.models import (
     Order,
     Product,
@@ -40,7 +40,7 @@ async def _get_restaurant(user: User, db: AsyncSession) -> Restaurant:
 @router.get("/products/", response_model=list[ProductOut])
 async def list_products(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     stmt = select(Product).where(Product.restaurant_id == rest.id)
@@ -52,7 +52,7 @@ async def list_products(
 async def create_product(
     body: ProductCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     product = Product(
@@ -69,7 +69,7 @@ async def update_product(
     product_id: int,
     body: ProductUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     result = await db.execute(
@@ -91,7 +91,7 @@ async def update_product(
 async def delete_product(
     product_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     result = await db.execute(
@@ -108,7 +108,7 @@ async def delete_product(
 @router.get("/orders/", response_model=list[OrderOut])
 async def list_orders(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     stmt = (
@@ -126,7 +126,7 @@ async def update_order_status(
     order_id: int,
     body: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     stmt = (
@@ -152,7 +152,7 @@ async def update_order_status(
 @router.get("/hours/", response_model=list[RestaurantHoursOut])
 async def get_hours(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     stmt = (
@@ -168,7 +168,7 @@ async def get_hours(
 async def update_hours(
     body: list[RestaurantHoursUpdate],
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     stmt = (
@@ -208,7 +208,7 @@ async def update_hours(
 @router.put("/availability")
 async def toggle_availability(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_restaurant_user),
+    user: User = Depends(get_current_admin_user),
 ):
     rest = await _get_restaurant(user, db)
     rest.available = not rest.available

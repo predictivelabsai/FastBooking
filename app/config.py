@@ -33,7 +33,6 @@ class Settings(BaseSettings):
     FROM_EMAIL: str = "info@fastsme.com"
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
-    TRIAL_DAYS: int = 14
 
 
 settings = Settings()

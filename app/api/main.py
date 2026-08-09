@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.routers import (
     admin,
@@ -11,6 +12,7 @@ from app.api.routers import (
     products,
     restaurants,
 )
+from app.config import settings
 
 
 def create_api_app() -> FastAPI:
@@ -18,10 +20,17 @@ def create_api_app() -> FastAPI:
 
     api.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[settings.PUBLIC_URL.rstrip("/")],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+    api.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.SESSION_SECRET,
+        session_cookie="session_",
+        same_site="lax",
+        https_only=settings.ENVIRONMENT == "production",
     )
 
     api.include_router(restaurants.router, prefix="/v0/restaurants", tags=["restaurants"])

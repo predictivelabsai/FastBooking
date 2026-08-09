@@ -10,7 +10,8 @@ from starlette.responses import Response
 PRODUCT = "FastBooking"
 BASE_URL = "https://booking.fastsme.com"
 DESCRIPTION = (
-    "Multi-tenant restaurant, hotel, private-clinic, and event booking software."
+    "Recreation management software for aquatics, programmes, memberships, "
+    "facilities, customer self-service, payments, and reporting."
 )
 KEYWORDS = (
     "FastBooking",
@@ -19,16 +20,29 @@ KEYWORDS = (
     "clinic appointment scheduling",
     "event ticketing",
     "multi-tenant booking platform",
+    "recreation management software",
+    "aquatic facility bookings",
+    "swimming lesson management",
     "FastSME",
     "open source business software",
 )
 FEATURES = (
+    "Swimming lessons and recreation programmes",
+    "Aquatic facilities and lane allocation",
+    "Memberships, visits, and attendance",
+    "Facility, court, stadium, and room bookings",
     "Restaurant ordering and table reservations",
     "Hotel room inventory",
     "FastClinic-connected appointments",
     "Event and concert ticketing",
 )
-SITEMAP_PATHS = ("/", "/developers")
+SITEMAP_ENTRIES = (
+    ("/", "weekly", "1.0"),
+    ("/features", "weekly", "0.9"),
+    ("/compare", "weekly", "0.8"),
+    ("/developers", "monthly", "0.6"),
+)
+SITEMAP_PATHS = tuple(path for path, _frequency, _priority in SITEMAP_ENTRIES)
 
 
 def seo_meta(
@@ -86,10 +100,10 @@ async def sitemap():
     urls = "\n".join(
         (
             f"  <url><loc>{BASE_URL}{path}</loc>"
-            f"<changefreq>{'weekly' if path == '/' else 'monthly'}</changefreq>"
-            f"<priority>{'1.0' if path == '/' else '0.6'}</priority></url>"
+            f"<changefreq>{frequency}</changefreq>"
+            f"<priority>{priority}</priority></url>"
         )
-        for path in SITEMAP_PATHS
+        for path, frequency, priority in SITEMAP_ENTRIES
     )
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -98,6 +112,28 @@ async def sitemap():
         "</urlset>\n"
     )
     return Response(xml, media_type="application/xml")
+
+
+async def llms():
+    body = f"""# FastBooking
+
+> Open-source recreation and multi-service booking software for facilities, programmes, memberships, customer self-service, payments, and reporting.
+
+## Public pages
+
+- [Home]({BASE_URL}/): Recreation management overview and animated product tour.
+- [Features]({BASE_URL}/features): Complete capability map.
+- [How we compare]({BASE_URL}/compare): Source-linked recreation software comparison.
+- [Developers]({BASE_URL}/developers): API resources and interactive documentation.
+
+## Key facts
+
+- FastBooking is MIT-licensed: https://github.com/predictivelabsai/FastBooking
+- Customer relationship workflows can connect to FastCRM while FastBooking remains the booking and availability source.
+- Clinical records remain in FastClinic; FastBooking stores appointment allocation references only.
+- Product configuration is restricted to the tenant admin role.
+"""
+    return Response(body, media_type="text/plain")
 
 
 async def robots():
@@ -116,7 +152,10 @@ Sitemap: {BASE_URL}/sitemap.xml
 
 
 def register_seo_routes(app):
-    app.get("/sitemap.xml")(sitemap)
-    app.routes.insert(0, app.routes.pop())
-    app.get("/robots.txt")(robots)
-    app.routes.insert(0, app.routes.pop())
+    for path, handler in (
+        ("/sitemap.xml", sitemap),
+        ("/robots.txt", robots),
+        ("/llms.txt", llms),
+    ):
+        app.get(path)(handler)
+        app.routes.insert(0, app.routes.pop())

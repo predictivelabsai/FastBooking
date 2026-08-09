@@ -35,8 +35,10 @@ async def deliver_pending(limit: int = 50) -> int:
                 reference = item.payload.get("reference", "")
                 subjects = {
                     "booking_confirmation": f"Booking confirmed · {reference}",
+                    "booking_waitlisted": f"Added to waitlist · {reference}",
                     "booking_reminder": f"Booking reminder · {reference}",
                     "booking_cancelled": f"Booking cancelled · {reference}",
+                    "membership_created": f"Membership created · {reference}",
                 }
                 messages = {
                     "booking_confirmation": (
@@ -50,7 +52,17 @@ async def deliver_pending(limit: int = 50) -> int:
                         f"Manage it at {settings.PUBLIC_URL}/manage/"
                         f"{item.payload.get('manage_token', '')}"
                     ),
+                    "booking_waitlisted": (
+                        f"You are on the waitlist for {reference} with "
+                        f"{item.payload.get('tenant', 'the facility')}. We will "
+                        "contact you when a place becomes available."
+                    ),
                     "booking_cancelled": f"Your booking {reference} has been cancelled.",
+                    "membership_created": (
+                        f"Your {item.payload.get('plan', 'membership')} request "
+                        f"{reference} with {item.payload.get('tenant', 'the facility')} "
+                        "has been created."
+                    ),
                 }
                 response = await client.post(
                     "https://api.postmarkapp.com/email",

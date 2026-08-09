@@ -1,11 +1,19 @@
 # FastBooking
 
-FastBooking is a multi-tenant booking and commerce platform for restaurants,
-hotels, private clinics, and ticketed events. Tenant administrators enable only
-the product modules they use.
+FastBooking is a multi-tenant recreation, booking, and commerce platform for
+sport and aquatic facilities, restaurants, hotels, private clinics, and
+ticketed events. Tenant administrators enable only the product modules they use.
+
+## Product walkthrough
+
+![FastBooking sport and recreation walkthrough](static/product-demo.gif)
 
 ## Product modules
 
+- **Sport and recreation:** swimming lessons and other programmes, aquatic lane
+  allocation, gym and fitness memberships, casual visits and check-in,
+  attendance, stadium/court/room booking, hosted checkout, and financial
+  reporting.
 - **Restaurants:** menus, carts, pickup orders, reservation-linked dine-in
   pre-orders, tables, party capacity, and table reservations.
 - **Hotels:** room-type inventory, per-night pricing, and half-open stay ranges.
@@ -15,8 +23,12 @@ the product modules they use.
 - **Events:** scheduled concerts or events, ticket types, sale windows,
   capacity, and per-booking limits.
 
-All modules share tenants, locations, guests, booking references, allocations,
-notifications, trials, usage records, and secure management tokens.
+All modules share tenants, locations, customer profiles, booking references,
+allocations, notifications, usage records, a payment ledger, and secure
+management tokens. New accounts require an administrator-assigned workspace.
+Recreation operations can be paired through open APIs with
+sister products such as FastCRM for wider customer relationship workflows,
+FastERP for finance, FastInsights for analytics, and FastMail for team email.
 
 ## Architecture
 
@@ -30,9 +42,9 @@ Key paths:
 app/db/platform_models.py   tenant, booking, inventory, and SaaS models
 app/services/booking.py     module-specific allocation strategies
 app/api/routers/platform.py tenant configuration and public API v1
-app/ui/pages/platform.py    landing, Google SSO, onboarding, module admin
+app/ui/pages/platform.py    public site, customer journeys, Google SSO, RBAC dashboard
 alembic/                    database migrations
-seed.py                     representative four-module demo tenant
+seed.py                     representative five-module demo tenant
 ```
 
 ## Local development
@@ -56,17 +68,31 @@ Open `http://localhost:5023`. Useful checks:
 docker build -t fastbooking:dev .
 ```
 
-Public tenant pages use `/book/{tenant_slug}`. The API catalogue is
+Public product pages include `/features` and the source-linked `/compare`
+matrix. Tenant booking pages use `/book/{tenant_slug}` and provide dedicated
+restaurant, hotel, event, facility, and clinic journeys. The API catalogue is
 `/api/v1/public/{tenant_slug}/catalogue`; interactive API documentation is
 available under `/api/docs`.
+
+## Image credits
+
+Customer journey photography is stored locally for reliable delivery and is
+used under the Unsplash License:
+
+- Restaurant — [Adrien Olichon](https://unsplash.com/photos/h2_8LFfjUUc)
+- Hotel — [Alex Muzenhardt](https://unsplash.com/photos/4MQ0T4zBIys)
+- Clinic — [Vitaly Gariev](https://unsplash.com/photos/7-l5EL7YHI4)
+- Events — [kofa boyah](https://unsplash.com/photos/St-6SCwofGo)
+- Facilities — [CHUTTERSNAP](https://unsplash.com/photos/4X1cKO7t3s8)
+- Aquatics — [Yanping Ma](https://unsplash.com/photos/QIZFFoGzuaI)
 
 ## Configuration and deployment
 
 Copy variable names from `.env.example`; never commit values. Production
 requires `DATABASE_URL`, `SESSION_SECRET`, Google OAuth credentials, Postmark,
-and a dedicated FastBooking-to-FastClinic connector token. Stripe variables are
-placeholders only:
-the MVP remains pay-later and cannot capture funds.
+and a dedicated FastBooking-to-FastClinic connector token. Stripe is optional:
+when configured, FastBooking creates hosted Checkout sessions and records signed
+webhook outcomes; otherwise recreation purchases remain payable at the facility.
 
 The root `Dockerfile` listens on `0.0.0.0:5023`, runs migrations before startup,
 and exposes `/healthz` and `/readyz`. FastDevOps declares the Coolify service at
