@@ -68,9 +68,14 @@ Open `http://localhost:5023`. Useful checks:
 docker build -t fastbooking:dev .
 ```
 
-Public product pages include `/features` and the source-linked `/compare`
-matrix. Tenant booking pages use `/book/{tenant_slug}` and provide dedicated
-restaurant, hotel, event, facility, and clinic journeys. The API catalogue is
+Every public navigation item has a dedicated route: `/features`, `/industries`,
+`/tour`, `/integrations`, `/partners`, `/compare`, and `/developers`. Industry
+pages provide deeper workflows for sport and recreation, aquatics and swim
+schools, restaurants, hotels, clinics, and events. `/sitemap.xml`, `/robots.txt`,
+and `/llms.txt` expose the complete public discovery surface.
+
+Tenant booking pages use `/book/{tenant_slug}` and provide dedicated restaurant,
+hotel, event, facility, and clinic journeys. The API catalogue is
 `/api/v1/public/{tenant_slug}/catalogue`; interactive API documentation is
 available under `/api/docs`.
 

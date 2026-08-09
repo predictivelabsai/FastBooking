@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 
 from fasthtml.common import *
 from sqlalchemy import func, select
+from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse, RedirectResponse
 
 from app.auth import google
@@ -97,26 +98,178 @@ PARTNERS = (
     ("Consistente", "https://consistente.tech/", "https://consistente.tech/static/favicon.svg", "Enterprise AI delivery across financial services, healthcare, the public sector and technology."),
     ("Manmouna Technologies", "https://manmouna.tech/", "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230B1E14'/%3E%3Cpath d='M32 12 52 32 32 52 12 32Z' fill='%2334D399'/%3E%3Cpath d='M32 22 42 32 32 42 22 32Z' fill='%230B1E14'/%3E%3C/svg%3E", "Auditable-by-design AI systems for European public services across health, defence, public management and mobility."),
 )
+INTEGRATIONS = (
+    (
+        "FastCRM",
+        "Pair booking and membership activity with contacts, tasks and relationship timelines.",
+        "https://crm.fastsme.com",
+    ),
+    (
+        "FastERP",
+        "Hand settlement reconciliation, invoicing and general-ledger workflows to the finance system.",
+        "https://erp.fastsme.com",
+    ),
+    (
+        "FastInsights",
+        "Take governed booking, utilisation, attendance and revenue data into operational dashboards.",
+        "https://insights.fastsme.com",
+    ),
+    (
+        "FastMail",
+        "Extend service communications into a shared team inbox and coordinated customer follow-up.",
+        "https://mail.fastsme.com",
+    ),
+    (
+        "FastClinic",
+        "Keep clinical records in the clinical system while FastBooking owns appointment allocation.",
+        "https://clinic.fastsme.com",
+    ),
+    (
+        "FastSSO",
+        "Connect workforce identity and access without weakening FastBooking tenant boundaries.",
+        "https://github.com/predictivelabsai/FastSSO",
+    ),
+)
+INDUSTRIES = {
+    "sport-recreation": {
+        "name": "Sport & recreation",
+        "eyebrow": "Councils, trusts and multi-facility operators",
+        "summary": "Coordinate facilities, memberships, programmes, visits and revenue across community recreation services.",
+        "image": "/static/images/facility-booking.jpg",
+        "outcomes": (
+            "Give residents one place to discover courts, rooms, programmes and memberships.",
+            "Prevent clashes across stadiums, courts, rooms and shared equipment.",
+            "Track bookings, attendance, casual visits, payments and refunds together.",
+        ),
+        "workflow": (
+            ("Publish", "Configure bookable locations, resources, capacity, opening windows and prices."),
+            ("Allocate", "Check resource conflicts before confirming a facility or programme place."),
+            ("Serve", "Give front-desk teams current entitlement, arrival and booking context."),
+            ("Review", "Monitor demand, utilisation, attendance, revenue and exceptions by facility."),
+        ),
+        "integration": "Use FastCRM for relationship follow-up, FastERP for finance hand-off and FastInsights for governed operational analysis.",
+    },
+    "aquatics-swim-schools": {
+        "name": "Aquatics & swim schools",
+        "eyebrow": "Pools, aquatic centres and learn-to-swim teams",
+        "summary": "Run lessons, term enrolments, pool capacity and lane allocation without separating the customer journey from daily operations.",
+        "image": "/static/images/aquatics-booking.jpg",
+        "outcomes": (
+            "Structure terms, sessions, levels, capacity and waitlists for learn-to-swim programmes.",
+            "Allocate pools and lanes around lessons, clubs, casual swimming and maintenance windows.",
+            "Record attendance and no-shows while retaining a clear enrolment and payment trail.",
+        ),
+        "workflow": (
+            ("Plan", "Create programme offerings and reserve the required pool or lane capacity."),
+            ("Enrol", "Let families choose a suitable session with live places and clear pricing."),
+            ("Attend", "Record participation, no-shows and casual visits at the facility."),
+            ("Improve", "Review fill rates, attendance patterns, income and under-used capacity."),
+        ),
+        "integration": "Send relationship follow-up to FastCRM and governed programme, attendance and revenue measures to FastInsights.",
+    },
+    "restaurants": {
+        "name": "Restaurants",
+        "eyebrow": "Dining rooms, venues and hospitality groups",
+        "summary": "Turn live table capacity into a straightforward guest reservation journey, with optional ordering and payment context.",
+        "image": "/static/images/table-reservation.jpg",
+        "outcomes": (
+            "Allocate a suitable table from party size and reservation time.",
+            "Avoid overlapping reservations while keeping staff control of inventory.",
+            "Connect booking, guest and payment status without forcing restaurant workflows into a calendar form.",
+        ),
+        "workflow": (
+            ("Discover", "Present locations, service windows and availability on a responsive booking page."),
+            ("Reserve", "Capture party size and contact details, then allocate a conflict-free table."),
+            ("Serve", "Give the team a current reservation list and secure customer management link."),
+            ("Follow up", "Pass broader guest relationships and team communications to FastCRM and FastMail."),
+        ),
+        "integration": "FastBooking owns reservation allocation; FastCRM can retain the wider guest relationship and FastERP can receive settlement data.",
+    },
+    "hotels": {
+        "name": "Hotels & accommodation",
+        "eyebrow": "Independent hotels, lodges and accommodation groups",
+        "summary": "Sell room-type inventory by night with a customer journey designed for stays rather than hourly appointments.",
+        "image": "/static/images/hotel-booking.jpg",
+        "outcomes": (
+            "Expose room types, nightly availability and stay pricing in one booking flow.",
+            "Reserve inventory across every night in a stay and avoid overselling capacity.",
+            "Keep confirmations, payments, refunds and cancellations tied to the booking record.",
+        ),
+        "workflow": (
+            ("Search", "Let guests compare room types for arrival and departure dates."),
+            ("Price", "Calculate the stay from nightly inventory and configured rates."),
+            ("Confirm", "Hold the required inventory and issue a secure booking management link."),
+            ("Reconcile", "Track payment state and hand accounting workflows to FastERP."),
+        ),
+        "integration": "Connect FastCRM for guest relationships, FastMail for shared communications and FastERP for finance workflows.",
+    },
+    "clinics": {
+        "name": "Clinics & allied health",
+        "eyebrow": "Private clinics and appointment-led services",
+        "summary": "Offer a focused appointment journey while keeping clinical records inside FastClinic and operational booking data inside FastBooking.",
+        "image": "/static/images/clinic-booking.jpg",
+        "outcomes": (
+            "Publish services, practitioners and appointment availability without exposing clinical data.",
+            "Check resource and practitioner allocation before confirmation.",
+            "Retain a strict boundary: booking references here, clinical records in FastClinic.",
+        ),
+        "workflow": (
+            ("Choose", "Let patients select a service, practitioner and available appointment."),
+            ("Allocate", "Confirm the time against the relevant booking resources."),
+            ("Attend", "Use the booking reference to coordinate arrival and operational status."),
+            ("Treat", "Continue clinical documentation and care workflows in FastClinic."),
+        ),
+        "integration": "FastClinic remains the clinical system of record; only allocation references cross the integration boundary.",
+    },
+    "events-venues": {
+        "name": "Events & venues",
+        "eyebrow": "Community events, performances and ticketed venues",
+        "summary": "Publish scheduled events, sell capacity-controlled ticket types and keep confirmations and payment status together.",
+        "image": "/static/images/event-booking.jpg",
+        "outcomes": (
+            "Create scheduled events with ticket types, prices and capacity limits.",
+            "Give customers a direct event-specific booking and confirmation journey.",
+            "See ticket sales, booking status, payments and refunds in the admin view.",
+        ),
+        "workflow": (
+            ("Publish", "Configure the event, venue context, ticket types, price and capacity."),
+            ("Book", "Let customers select tickets and create a capacity-checked reservation."),
+            ("Confirm", "Issue the booking reference and retain payment status alongside it."),
+            ("Analyse", "Take attendance, sales and utilisation measures into FastInsights."),
+        ),
+        "integration": "Use FastCRM and FastMail for audience relationships and communications, with FastERP and FastInsights downstream.",
+    },
+}
+PUBLIC_NAV_LINKS = (
+    ("Features", "/features"),
+    ("Industries", "/industries"),
+    ("Tour", "/tour"),
+    ("Integrations", "/integrations"),
+    ("Partners", "/partners"),
+    ("Compare", "/compare"),
+    ("Developers", "/developers"),
+)
 CSS = """
 :root{--accent:#0f766e;--accent-dark:#0a5b55;--tint:#f0fdfa;--ink:#12302d;--muted:#61726f;--line:#dce8e5;--soft:#f7faf9}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#fff;color:var(--ink);font-family:Inter,system-ui,sans-serif}.nav-wrap{border-bottom:1px solid var(--line);position:relative;z-index:10;background:rgba(255,255,255,.96)}
-.nav{height:72px;display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:auto;padding:0 24px}.nav-links{display:flex;align-items:center;gap:26px}.nav-links>a:not(.button){font-size:14px;font-weight:600;color:var(--muted);text-decoration:none}.nav-links>a:hover{color:var(--ink)}
+.nav{height:72px;display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:auto;padding:0 24px}.nav-links{display:flex;align-items:center;gap:18px}.nav-links>a:not(.button){font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}.nav-links>a:hover{color:var(--ink)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--ink);text-decoration:none}.mark{width:34px;height:34px;border-radius:11px;background:var(--accent);display:grid;place-items:center;color:#fff;box-shadow:0 7px 18px rgba(15,118,110,.2)}
 .button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:12px 20px;text-decoration:none;font-weight:700;font-size:14px;background:var(--accent);color:#fff;cursor:pointer;transition:.2s}.button:hover{background:var(--accent-dark);transform:translateY(-1px)}.outline{background:#fff;color:var(--ink);border:1px solid var(--line)}.outline:hover{background:var(--soft);color:var(--ink)}
 .hero{max-width:1180px;margin:auto;padding:82px 24px 72px;display:grid;grid-template-columns:1.08fr .92fr;gap:66px;align-items:center}.kicker{color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.16em}.hero h1{font-size:clamp(46px,6.2vw,74px);line-height:1.01;letter-spacing:-.058em;max-width:740px;margin:20px 0 24px}.lede{font-size:19px;line-height:1.65;color:var(--muted);max-width:690px;margin:0 0 30px}.hero-note{color:var(--muted);font-size:13px;margin:14px 0 0}
 .ops{background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:0 28px 80px rgba(18,48,45,.12);overflow:hidden;transform:rotate(1deg)}.ops-head{padding:17px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.ops-title{font-size:13px;font-weight:800}.live{font-size:11px;font-weight:800;color:var(--accent);background:var(--tint);border-radius:99px;padding:6px 9px}.ops-body{padding:14px}.ops-row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:13px 8px;border-bottom:1px solid #edf2f1}.ops-row:last-child{border:0}.ops-time{font-size:12px;color:var(--muted)}.ops-name{font-size:13px;font-weight:700}.ops-meta{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:3px}.status{font-size:11px;font-weight:700;border-radius:99px;padding:6px 8px;background:var(--tint);color:var(--accent)}.status.warn{background:#fff7ed;color:#b45309}.ops-kpis{display:grid;grid-template-columns:repeat(3,1fr);background:var(--soft);border-top:1px solid var(--line)}.ops-kpi{padding:16px;border-right:1px solid var(--line)}.ops-kpi:last-child{border:0}.ops-kpi strong{display:block;font-size:20px}.ops-kpi span{font-size:10px;color:var(--muted)}
 .proof{border-block:1px solid var(--line);background:var(--soft)}.proof-inner{max-width:1180px;margin:auto;padding:20px 24px;display:flex;justify-content:space-between;gap:24px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.proof-inner span:before{content:'✓';color:var(--accent);margin-right:8px}
 .demo-section{max-width:1180px;margin:auto;padding:92px 24px 18px}.demo-head{display:flex;align-items:end;justify-content:space-between;gap:50px;margin-bottom:34px}.demo-head h2{font-size:clamp(34px,4vw,50px);letter-spacing:-.045em;line-height:1.08;margin:14px 0 0;max-width:650px}.demo-head p{color:var(--muted);font-size:16px;line-height:1.65;max-width:440px;margin:0}.demo-frame{margin:0;border:1px solid var(--line);border-radius:24px;padding:10px;background:var(--soft);box-shadow:0 24px 70px rgba(18,48,45,.1);overflow:hidden}.demo-frame img{display:block;width:100%;height:auto;border-radius:16px}.demo-frame figcaption{padding:12px 8px 4px;color:var(--muted);font-size:12px}
-.section{max-width:1180px;margin:auto;padding:92px 24px}.section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px;align-items:end;margin-bottom:38px}.section h2{font-size:clamp(34px,4vw,50px);letter-spacing:-.045em;line-height:1.08;margin:14px 0 0}.section-intro{font-size:17px;line-height:1.65;color:var(--muted);margin:0}.cap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.cap-card{border:1px solid var(--line);border-radius:19px;padding:23px;background:#fff;min-height:224px}.cap-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:var(--tint);color:var(--accent);font-size:16px;font-weight:800}.cap-card h3{font-size:16px;line-height:1.3;margin:19px 0 9px}.cap-card p{font-size:13px;line-height:1.62;color:var(--muted);margin:0}
+.section{max-width:1180px;margin:auto;padding:92px 24px}.section>.button{margin-top:30px}.section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px;align-items:end;margin-bottom:38px}.section h2{font-size:clamp(34px,4vw,50px);letter-spacing:-.045em;line-height:1.08;margin:14px 0 0}.section-intro{font-size:17px;line-height:1.65;color:var(--muted);margin:0}.cap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.cap-card{border:1px solid var(--line);border-radius:19px;padding:23px;background:#fff;min-height:224px}.cap-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:var(--tint);color:var(--accent);font-size:16px;font-weight:800}.cap-card h3{font-size:16px;line-height:1.3;margin:19px 0 9px}.cap-card p{font-size:13px;line-height:1.62;color:var(--muted);margin:0}
 .journey-band{background:var(--ink);color:#fff}.journey{max-width:1180px;margin:auto;padding:84px 24px}.journey .kicker{color:#5eead4}.journey h2{font-size:clamp(34px,4vw,50px);letter-spacing:-.045em;max-width:720px;margin:14px 0 44px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.14);border-radius:20px;overflow:hidden}.step{background:var(--ink);padding:28px}.step b{color:#5eead4;font-size:11px;letter-spacing:.1em}.step h3{font-size:17px;margin:16px 0 8px}.step p{font-size:13px;line-height:1.55;color:#b9cfcb;margin:0}
 .integrations{background:var(--tint);border-block:1px solid #cfe7e2}.integration-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.integration{background:#fff;border:1px solid #cfe7e2;border-radius:18px;padding:22px}.integration strong{display:block;font-size:15px;margin-bottom:9px}.integration p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.integration a{color:var(--accent);font-weight:700;text-decoration:none}
-.partners{scroll-margin-top:80px}.partner-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}.partner-card{min-width:0;border:1px solid var(--line);border-radius:18px;padding:20px;color:var(--ink);text-decoration:none}.partner-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.partner-card-head img{width:46px;height:46px;object-fit:contain}.partner-card-head span{color:var(--accent);font-size:9px;font-weight:800;letter-spacing:.08em;text-align:right;text-transform:uppercase}.partner-card h3{margin:18px 0 8px}.partner-card p{min-height:80px;color:var(--muted);font-size:13px;line-height:1.55}.partner-card small{color:var(--accent);font-weight:750}
+.industries{background:var(--soft);border-block:1px solid var(--line)}.industry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.industry-detail>.industry-grid+.industry-grid{margin-top:16px}.industry-card{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--ink);text-decoration:none}.industry-card img{display:block;width:100%;height:172px;object-fit:cover}.industry-card-body{padding:22px}.industry-card h3{font-size:18px;margin:0 0 9px}.industry-card p{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 18px}.industry-card small{color:var(--accent);font-weight:750}.industry-detail{max-width:1180px;margin:auto;padding:28px 24px 92px}.industry-detail-hero{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center}.industry-detail-hero img{display:block;width:100%;height:390px;object-fit:cover;border-radius:24px}.industry-detail-copy h1{font-size:clamp(42px,5.5vw,66px);line-height:1.03;letter-spacing:-.055em;margin:18px 0}.industry-detail-copy p{color:var(--muted);font-size:18px;line-height:1.65}.outcome-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:52px 0}.outcome-card{border:1px solid var(--line);border-radius:18px;padding:22px;background:#fff}.outcome-card b{color:var(--accent);font-size:11px;letter-spacing:.1em}.outcome-card p{line-height:1.6;margin:12px 0 0}.workflow-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:20px;overflow:hidden}.workflow-card{padding:24px;background:var(--soft)}.workflow-card b{color:var(--accent);font-size:11px;letter-spacing:.1em}.workflow-card h2{font-size:17px;margin:14px 0 8px}.workflow-card p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.boundary{margin-top:42px;padding:26px;border:1px solid #cfe7e2;border-radius:20px;background:var(--tint)}.boundary h2{font-size:20px;margin:0 0 9px}.boundary p{color:var(--muted);line-height:1.6;margin:0}
+.partners{scroll-margin-top:80px}.partner-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.partner-card{min-width:0;border:1px solid var(--line);border-radius:18px;padding:24px;color:var(--ink);text-decoration:none;background:#fff;transition:transform .18s,border-color .18s,box-shadow .18s}.partner-card:hover{transform:translateY(-3px);border-color:#8fc9be;box-shadow:0 14px 34px rgba(17,24,39,.08)}.partner-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.partner-card-head img{width:48px;height:48px;object-fit:contain}.partner-card-head span{color:var(--accent);font-size:9px;font-weight:800;letter-spacing:.08em;text-align:right;text-transform:uppercase}.partner-card h3{margin:20px 0 8px}.partner-card p{min-height:64px;color:var(--muted);font-size:13px;line-height:1.55}.partner-card small{color:var(--accent);font-weight:750}
 .cta{max-width:1132px;margin:92px auto;padding:62px;border-radius:26px;background:var(--tint);border:1px solid #cfe7e2;text-align:center}.cta h2{font-size:clamp(34px,4vw,50px);letter-spacing:-.045em;margin:12px auto 18px;max-width:760px}.cta p{color:var(--muted);font-size:17px;line-height:1.6;max-width:700px;margin:0 auto 28px}
 .shell{max-width:1180px;margin:44px auto;padding:0 24px}.head{display:flex;justify-content:space-between;align-items:center;gap:20px}.modules{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:28px}.module{border:1px solid var(--line);border-radius:18px;padding:22px}.module.enabled{border-color:var(--accent);background:var(--tint)}.notice{max-width:1180px;margin:16px auto 0;padding:12px 24px;color:#92400e}.footer{max-width:1180px;margin:auto;padding:38px 24px;color:var(--muted);display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--line)}.footer a{color:var(--accent);text-decoration:none;font-weight:700}
 .page-hero{max-width:950px;margin:auto;padding:82px 24px 44px;text-align:center}.page-hero h1{font-size:clamp(42px,6vw,68px);line-height:1.03;letter-spacing:-.055em;margin:18px 0}.page-hero p{max-width:720px;margin:auto;color:var(--muted);font-size:18px;line-height:1.65}.feature-groups{max-width:1180px;margin:auto;padding:28px 24px 92px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.feature-group{border:1px solid var(--line);border-radius:22px;padding:26px}.feature-group h2{font-size:21px;margin:0 0 8px}.feature-group>p{color:var(--muted);line-height:1.55}.check-list{list-style:none;padding:0;margin:20px 0 0}.check-list li{padding:10px 0;border-top:1px solid var(--line);font-size:14px}.check-list li:before{content:'✓';color:var(--accent);font-weight:800;margin-right:10px}.cmp-wrap{max-width:1180px;margin:auto;padding:20px 24px 92px}.cmp-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:22px}.cmp-table{width:100%;border-collapse:collapse;min-width:960px;background:#fff}.cmp-table caption{text-align:left;padding:18px;color:var(--muted);font-size:12px}.cmp-table th,.cmp-table td{text-align:left;vertical-align:top;padding:16px;border-top:1px solid var(--line);font-size:13px;line-height:1.5}.cmp-table th{background:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.cmp-table tr.fastbooking{background:var(--tint)}.cmp-table a{color:var(--accent);font-weight:700}.cmp-note{font-size:12px;color:var(--muted);line-height:1.55}.dashboard{max-width:1240px;margin:auto;padding:32px 24px 70px}.dash-nav{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:30px}.dash-actions{display:flex;gap:14px;align-items:center}.dash-actions a{color:var(--muted);font-size:13px;font-weight:700;text-decoration:none}.role{background:var(--tint);color:var(--accent);border-radius:99px;padding:7px 10px;font-size:11px;font-weight:800;text-transform:uppercase}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.kpi-card{border:1px solid var(--line);border-radius:18px;padding:20px;background:#fff}.kpi-card span{color:var(--muted);font-size:12px}.kpi-card strong{display:block;font-size:28px;margin-top:9px}.dash-grid{display:grid;grid-template-columns:1.45fr .85fr;gap:18px;margin-top:18px}.panel{border:1px solid var(--line);border-radius:20px;background:#fff;overflow:hidden}.panel-head{padding:20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.panel-head h2{font-size:17px;margin:0}.data-table{width:100%;border-collapse:collapse}.data-table th,.data-table td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);font-size:12px}.data-table th{color:var(--muted);font-size:10px;text-transform:uppercase}.empty{padding:28px;color:var(--muted)}.config-grid{padding:14px;display:grid;gap:10px}.config-row{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:14px}.config-row h3{font-size:13px;margin:0}.config-row p{font-size:11px;color:var(--muted);margin:4px 0 0}.booking-hero{height:310px;background-size:cover;background-position:center;position:relative;color:#fff}.booking-hero:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,33,30,.83),rgba(10,33,30,.18))}.booking-hero-inner{position:relative;z-index:1;max-width:1180px;margin:auto;padding:70px 24px}.booking-hero h1{font-size:clamp(38px,5vw,62px);letter-spacing:-.05em;margin:12px 0}.booking-hero p{max-width:580px;line-height:1.55;color:#e3efed}.booking-layout{max-width:1180px;margin:-38px auto 70px;padding:0 24px;position:relative;z-index:2;display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.booking-panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:25px;box-shadow:0 20px 55px rgba(18,48,45,.1)}.booking-panel h2{margin:0 0 8px}.options{display:grid;gap:10px;margin-top:20px}.option{border:1px solid var(--line);border-radius:14px;padding:15px}.option strong{display:block}.option span{font-size:12px;color:var(--muted)}.booking-form{display:grid;grid-template-columns:1fr 1fr;gap:13px}.booking-form label{font-size:11px;font-weight:800;color:var(--muted)}.booking-form input,.booking-form select,.booking-form textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:11px;font:inherit;background:#fff}.booking-form .wide{grid-column:1/-1}.photo-credit{font-size:10px;color:var(--muted);margin-top:14px}.photo-credit a{color:inherit}.success{background:var(--tint);border:1px solid #b7dfd7;border-radius:18px;padding:22px}
-@media(max-width:900px){.hero{grid-template-columns:1fr;gap:46px}.cap-grid,.integration-grid,.partner-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.section-head,.demo-head{display:grid;grid-template-columns:1fr;gap:20px}.proof-inner{flex-wrap:wrap}.nav-links>a:not(.button){display:none}}
+@media(max-width:900px){.hero,.industry-detail-hero{grid-template-columns:1fr;gap:46px}.cap-grid,.integration-grid,.partner-grid,.industry-grid,.outcome-grid{grid-template-columns:repeat(2,1fr)}.steps,.workflow-grid{grid-template-columns:repeat(2,1fr)}.section-head,.demo-head{display:grid;grid-template-columns:1fr;gap:20px}.proof-inner{flex-wrap:wrap}.nav-links>a:not(.button){display:none}}
 @media(max-width:900px){.feature-groups,.dash-grid,.booking-layout{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}.booking-layout{margin-top:-25px}}
-@media(max-width:580px){.nav{padding:0 18px}.nav-links{gap:10px}.hero{padding:58px 20px 52px}.hero h1{font-size:44px}.section,.journey,.demo-section{padding:68px 20px}.cap-grid,.integration-grid,.partner-grid,.steps,.modules,.feature-groups,.kpi-grid{grid-template-columns:1fr}.proof-inner{display:grid;grid-template-columns:1fr 1fr}.ops{transform:none}.ops-kpis{grid-template-columns:1fr}.ops-kpi{border-right:0;border-bottom:1px solid var(--line)}.demo-frame{border-radius:16px;padding:6px}.demo-frame img{border-radius:11px}.cta{margin:56px 20px;padding:45px 22px}.footer{flex-direction:column;gap:12px}.brand{font-size:14px}.button{padding:10px 15px}.booking-form{grid-template-columns:1fr}.booking-form .wide{grid-column:auto}.data-table{min-width:650px}.panel{overflow-x:auto}.dash-nav{align-items:flex-start}.dash-actions{flex-wrap:wrap;justify-content:flex-end}}
+@media(max-width:580px){.nav{padding:0 18px}.nav-links{gap:10px}.hero{padding:58px 20px 52px}.hero h1{font-size:44px}.section,.journey,.demo-section{padding:68px 20px}.cap-grid,.integration-grid,.partner-grid,.industry-grid,.outcome-grid,.workflow-grid,.steps,.modules,.feature-groups,.kpi-grid{grid-template-columns:1fr}.industry-detail-hero img{height:280px}.proof-inner{display:grid;grid-template-columns:1fr 1fr}.ops{transform:none}.ops-kpis{grid-template-columns:1fr}.ops-kpi{border-right:0;border-bottom:1px solid var(--line)}.demo-frame{border-radius:16px;padding:6px}.demo-frame img{border-radius:11px}.cta{margin:56px 20px;padding:45px 22px}.footer{flex-direction:column;gap:12px}.brand{font-size:14px}.button{padding:10px 15px}.booking-form{grid-template-columns:1fr}.booking-form .wide{grid-column:auto}.data-table{min-width:650px}.panel{overflow-x:auto}.dash-nav{align-items:flex-start}.dash-actions{flex-wrap:wrap;justify-content:flex-end}}
 """
 
 
@@ -154,6 +307,43 @@ def _head(
         ),
         Style(CSS),
         *extra,
+    )
+
+
+def _industry_card(slug: str, industry: dict):
+    return A(
+        Img(src=industry["image"], alt="", loading="lazy"),
+        Div(
+            H3(industry["name"]),
+            P(industry["summary"]),
+            Small("Explore this industry →"),
+            cls="industry-card-body",
+        ),
+        href=f"/industries/{slug}",
+        cls="industry-card",
+    )
+
+
+def _partner_grid():
+    return Div(
+        *[
+            A(
+                Div(
+                    Img(src=logo_url, alt=f"{name} logo", loading="lazy"),
+                    Span("Integration Partner"),
+                    cls="partner-card-head",
+                ),
+                H3(name),
+                P(description),
+                Small("Visit website ↗"),
+                href=url,
+                target="_blank",
+                rel="noopener noreferrer",
+                cls="partner-card",
+            )
+            for name, url, logo_url, description in PARTNERS
+        ],
+        cls="partner-grid",
     )
 
 
@@ -209,28 +399,6 @@ def landing_page(message: str = ""):
         )
         for number, title, description in capabilities
     ]
-    integrations = (
-        (
-            "FastCRM",
-            "Pair booking and membership activity with contacts, tasks and relationship timelines.",
-            "https://crm.fastsme.com",
-        ),
-        (
-            "FastERP",
-            "Provide a clean hand-off for settlement reconciliation, invoicing and the general ledger.",
-            "https://erp.fastsme.com",
-        ),
-        (
-            "FastInsights",
-            "Take governed booking, utilisation, attendance and revenue data into operational dashboards.",
-            "https://insights.fastsme.com",
-        ),
-        (
-            "FastMail",
-            "Extend service communications into a shared team inbox and coordinated customer follow-up.",
-            "https://mail.fastsme.com",
-        ),
-    )
     return Html(
         _head(
             "FastBooking · Sport and recreation management",
@@ -242,23 +410,7 @@ def landing_page(message: str = ""):
             ),
         ),
         Body(
-            Div(
-                Nav(
-                    A(Span("F", cls="mark"), "FastBooking", href="/", cls="brand"),
-                    Div(
-                        A("Features", href="/features"),
-                        A("Compare", href="/compare"),
-                        A("Tour", href="#tour"),
-                        A("Integrations", href="#integrations"),
-                        A("Partners", href="#partners"),
-                        A("Developers", href="/developers"),
-                        A("Sign In", href="/auth/google", cls="button outline"),
-                        cls="nav-links",
-                    ),
-                    cls="nav",
-                ),
-                cls="nav-wrap",
-            ),
+            _public_nav(),
             P(message, cls="notice") if message else None,
             Main(
                 Section(
@@ -271,7 +423,7 @@ def landing_page(message: str = ""):
                             "platform—backed by simple customer self-service.",
                             cls="lede",
                         ),
-                        A("View the product tour", href="#tour", cls="button"),
+                        A("View the product tour", href="/tour", cls="button"),
                         P(
                             "Tenant-scoped by design · Open APIs · Hosted or self-managed",
                             cls="hero-note",
@@ -335,6 +487,25 @@ def landing_page(message: str = ""):
                         cls="proof-inner",
                     ),
                     cls="proof",
+                ),
+                Section(
+                    Div(
+                        Div(
+                            Span("Industries", cls="kicker"),
+                            H2("Purpose-built journeys on one booking core."),
+                        ),
+                        P(
+                            "Use the operating model that fits each service—from lanes "
+                            "and courts to tables, rooms, appointments and ticketed events.",
+                            cls="section-intro",
+                        ),
+                        cls="section-head",
+                    ),
+                    Div(
+                        *[_industry_card(slug, industry) for slug, industry in INDUSTRIES.items()],
+                        cls="industry-grid",
+                    ),
+                    cls="section industries",
                 ),
                 Section(
                     Div(
@@ -443,19 +614,18 @@ def landing_page(message: str = ""):
                                 P(description),
                                 cls="integration",
                             )
-                            for name, description, url in integrations
+                            for name, description, url in INTEGRATIONS
                         ],
                         cls="integration-grid",
                     ),
+                    A("Explore integration boundaries", href="/integrations", cls="button"),
                     cls="section",
                     id="integrations",
                 ),
                 Section(
                     Div(Div(Span("Partners", cls="kicker"), H2("Connect with trusted integration specialists.")), P("Identity, software delivery, data engineering and applied-AI expertise for FastSME implementations.", cls="section-intro"), cls="section-head"),
-                    Div(*[
-                        A(Div(Img(src=logo_url, alt=f"{name} logo", loading="lazy"), Span("Integration Partner"), cls="partner-card-head"), H3(name), P(description), Small("Visit website ↗"), href=url, target="_blank", rel="noopener noreferrer", cls="partner-card")
-                        for name, url, logo_url, description in PARTNERS
-                    ], cls="partner-grid"),
+                    _partner_grid(),
+                    A("Meet our integration partners", href="/partners", cls="button"),
                     cls="section partners",
                     id="partners",
                 ),
@@ -484,10 +654,7 @@ def _public_nav():
         Nav(
             A(Span("F", cls="mark"), "FastBooking", href="/", cls="brand"),
             Div(
-                A("Features", href="/features"),
-                A("Compare", href="/compare"),
-                A("Partners", href="/#partners"),
-                A("Developers", href="/developers"),
+                *[A(label, href=href) for label, href in PUBLIC_NAV_LINKS],
                 A("Sign In", href="/auth/google", cls="button outline"),
                 cls="nav-links",
             ),
@@ -502,6 +669,270 @@ def _public_footer():
         Span("FastBooking is part of the open-source FastSME suite."),
         A("View source", href="https://github.com/predictivelabsai/FastBooking"),
         cls="footer",
+    )
+
+
+def industries_page():
+    return Html(
+        _head(
+            "Industries · FastBooking",
+            seo_path="/industries",
+            description=(
+                "See how FastBooking supports sport and recreation, aquatics, "
+                "restaurants, hotels, clinics, events and venues."
+            ),
+        ),
+        Body(
+            _public_nav(),
+            Main(
+                Section(
+                    Span("Industry solutions", cls="kicker"),
+                    H1("A booking journey shaped around the service."),
+                    P(
+                        "FastBooking shares customer, availability, payment and "
+                        "reporting foundations while preserving the workflows that "
+                        "make each industry different."
+                    ),
+                    cls="page-hero",
+                ),
+                Section(
+                    *[
+                        Div(
+                            *[
+                                _industry_card(slug, industry)
+                                for slug, industry in list(INDUSTRIES.items())[index : index + 3]
+                            ],
+                            cls="industry-grid",
+                        )
+                        for index in range(0, len(INDUSTRIES), 3)
+                    ],
+                    cls="industry-detail",
+                ),
+                Section(
+                    Span("Shared foundation", cls="kicker"),
+                    H2("One operating picture across every service."),
+                    P(
+                        "Tenant-scoped data, role-based administration, secure "
+                        "customer management links and provider-neutral payment "
+                        "records stay consistent across all booking journeys."
+                    ),
+                    A("Explore every feature", href="/features", cls="button"),
+                    cls="cta",
+                ),
+            ),
+            _public_footer(),
+        ),
+    )
+
+
+def industry_page(slug: str):
+    industry = INDUSTRIES.get(slug)
+    if industry is None:
+        raise HTTPException(status_code=404, detail="Industry not found")
+    return Html(
+        _head(
+            f"{industry['name']} booking software · FastBooking",
+            seo_path=f"/industries/{slug}",
+            description=industry["summary"],
+        ),
+        Body(
+            _public_nav(),
+            Main(
+                Section(
+                    Div(
+                        Span(industry["eyebrow"], cls="kicker"),
+                        H1(industry["name"]),
+                        P(industry["summary"]),
+                        A("See platform features", href="/features", cls="button"),
+                        cls="industry-detail-copy",
+                    ),
+                    Img(src=industry["image"], alt=f"{industry['name']} booking"),
+                    cls="industry-detail-hero",
+                ),
+                Div(
+                    *[
+                        Article(
+                            B(f"0{index}"),
+                            P(outcome),
+                            cls="outcome-card",
+                        )
+                        for index, outcome in enumerate(industry["outcomes"], 1)
+                    ],
+                    cls="outcome-grid",
+                ),
+                Div(
+                    *[
+                        Article(
+                            B(f"0{index}"),
+                            H2(title),
+                            P(description),
+                            cls="workflow-card",
+                        )
+                        for index, (title, description) in enumerate(
+                            industry["workflow"], 1
+                        )
+                    ],
+                    cls="workflow-grid",
+                ),
+                Aside(
+                    H2("Clear product boundaries"),
+                    P(industry["integration"]),
+                    cls="boundary",
+                ),
+                cls="industry-detail",
+            ),
+            _public_footer(),
+        ),
+    )
+
+
+def tour_page():
+    scenes = (
+        ("Live operations", "See bookings, programmes, visits and utilisation in context."),
+        ("Capability map", "Move from aquatics and memberships through payments and reporting."),
+        ("Industry journeys", "Give customers a view designed for the service they are booking."),
+        ("Admin control", "Review bookings and payments while reserving product configuration for admins."),
+    )
+    return Html(
+        _head(
+            "Product tour · FastBooking",
+            seo_path="/tour",
+            description=(
+                "Watch the FastBooking product tour covering recreation operations, "
+                "customer booking journeys, payments and admin controls."
+            ),
+        ),
+        Body(
+            _public_nav(),
+            Main(
+                Section(
+                    Span("Product tour", cls="kicker"),
+                    H1("See the booking operation as one connected service."),
+                    P(
+                        "The walkthrough moves from the public product story into "
+                        "customer journeys and the operational admin view."
+                    ),
+                    cls="page-hero",
+                ),
+                Section(
+                    Figure(
+                        Img(
+                            src="/static/product-demo.gif",
+                            alt="Animated FastBooking product walkthrough",
+                            width="800",
+                            height="450",
+                            decoding="async",
+                        ),
+                        Figcaption("FastBooking platform walkthrough"),
+                        cls="demo-frame",
+                    ),
+                    cls="demo-section",
+                ),
+                Div(
+                    *[
+                        Article(
+                            B(f"0{index}"),
+                            H2(title),
+                            P(description),
+                            cls="workflow-card",
+                        )
+                        for index, (title, description) in enumerate(scenes, 1)
+                    ],
+                    cls="workflow-grid industry-detail",
+                ),
+            ),
+            _public_footer(),
+        ),
+    )
+
+
+def integrations_page():
+    return Html(
+        _head(
+            "Integrations · FastBooking",
+            seo_path="/integrations",
+            description=(
+                "Understand FastBooking integrations with FastCRM, FastERP, "
+                "FastInsights, FastMail, FastClinic and FastSSO."
+            ),
+        ),
+        Body(
+            _public_nav(),
+            Main(
+                Section(
+                    Span("Fast* ecosystem", cls="kicker"),
+                    H1("Connect booking operations without blurring ownership."),
+                    P(
+                        "FastBooking remains the source for availability, allocation, "
+                        "enrolment and booking payment status. Sister products take "
+                        "responsibility for the specialist records they understand best."
+                    ),
+                    cls="page-hero",
+                ),
+                Section(
+                    Div(
+                        *[
+                            Article(
+                                Strong(A(name, href=url)),
+                                P(description),
+                                cls="integration",
+                            )
+                            for name, description, url in INTEGRATIONS
+                        ],
+                        cls="industry-grid",
+                    ),
+                    Aside(
+                        H2("The booking boundary"),
+                        P(
+                            "Tenant-scoped APIs expose only the data needed by each "
+                            "integration. Clinical records stay in FastClinic, broader "
+                            "relationships stay in FastCRM, accounting stays in FastERP, "
+                            "and governed analytics stay in FastInsights."
+                        ),
+                        cls="boundary",
+                    ),
+                    cls="industry-detail",
+                ),
+            ),
+            _public_footer(),
+        ),
+    )
+
+
+def partners_page():
+    return Html(
+        _head(
+            "Integration partners · FastBooking",
+            seo_path="/partners",
+            description=(
+                "Meet FastBooking integration partners for identity, software "
+                "delivery, data engineering and applied AI."
+            ),
+        ),
+        Body(
+            _public_nav(),
+            Main(
+                Section(
+                    Span("Integration partners", cls="kicker"),
+                    H1("Specialists who help FastBooking connect and scale."),
+                    P(
+                        "Our partners bring identity, software delivery, data "
+                        "engineering and applied-AI experience to FastSME implementations."
+                    ),
+                    cls="page-hero",
+                ),
+                Section(
+                    _partner_grid(),
+                    P(
+                        "Partner descriptions are based on each organisation's public "
+                        "profile. Follow the links for current services and capabilities.",
+                        cls="cmp-note",
+                    ),
+                    cls="industry-detail partners",
+                ),
+            ),
+            _public_footer(),
+        ),
     )
 
 
@@ -604,8 +1035,8 @@ def features_page():
                 Section(
                     Span("See it in motion", cls="kicker"),
                     H2("A quick tour of modern recreation operations."),
-                    P("Return to the product walkthrough on the home page."),
-                    A("Watch the demo", href="/#tour", cls="button"),
+                    P("Open the dedicated walkthrough and see the product in motion."),
+                    A("Watch the demo", href="/tour", cls="button"),
                     cls="cta",
                 ),
             ),
@@ -852,6 +1283,26 @@ def register_routes(app):
     async def compare():
         return comparison_page()
 
+    @app.get("/industries")
+    async def industries():
+        return industries_page()
+
+    @app.get("/industries/{industry_slug}")
+    async def industry(industry_slug: str):
+        return industry_page(industry_slug)
+
+    @app.get("/tour")
+    async def tour():
+        return tour_page()
+
+    @app.get("/integrations")
+    async def integrations():
+        return integrations_page()
+
+    @app.get("/partners")
+    async def partners():
+        return partners_page()
+
     @app.get("/developers")
     async def developers():
         return Html(
@@ -864,8 +1315,8 @@ def register_routes(app):
                 ),
             ),
             Body(
+                _public_nav(),
                 Main(
-                    A("FastBooking", href="/", cls="brand"),
                     Span("Developers", cls="kicker"),
                     H1("Build on tenant-scoped booking APIs."),
                     P(
@@ -896,7 +1347,8 @@ def register_routes(app):
                     A("Open interactive API docs", href="/api/docs", cls="button"),
                     P(A("Download OpenAPI JSON", href="/swagger.json")),
                     cls="shell",
-                )
+                ),
+                _public_footer(),
             ),
         )
 

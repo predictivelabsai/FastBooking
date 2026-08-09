@@ -19,6 +19,10 @@ KEYWORDS = (
     "hotel booking software",
     "clinic appointment scheduling",
     "event ticketing",
+    "sports facility booking software",
+    "swim school management software",
+    "restaurant reservation software",
+    "clinic appointment booking",
     "multi-tenant booking platform",
     "recreation management software",
     "aquatic facility bookings",
@@ -39,6 +43,16 @@ FEATURES = (
 SITEMAP_ENTRIES = (
     ("/", "weekly", "1.0"),
     ("/features", "weekly", "0.9"),
+    ("/industries", "weekly", "0.9"),
+    ("/industries/sport-recreation", "weekly", "0.8"),
+    ("/industries/aquatics-swim-schools", "weekly", "0.8"),
+    ("/industries/restaurants", "weekly", "0.8"),
+    ("/industries/hotels", "weekly", "0.8"),
+    ("/industries/clinics", "weekly", "0.8"),
+    ("/industries/events-venues", "weekly", "0.8"),
+    ("/tour", "weekly", "0.8"),
+    ("/integrations", "monthly", "0.7"),
+    ("/partners", "monthly", "0.7"),
     ("/compare", "weekly", "0.8"),
     ("/developers", "monthly", "0.6"),
 )
@@ -123,6 +137,10 @@ async def llms():
 
 - [Home]({BASE_URL}/): Recreation management overview and animated product tour.
 - [Features]({BASE_URL}/features): Complete capability map.
+- [Industries]({BASE_URL}/industries): Detailed booking workflows by industry.
+- [Product tour]({BASE_URL}/tour): Animated platform walkthrough.
+- [Integrations]({BASE_URL}/integrations): Fast* product boundaries and hand-offs.
+- [Partners]({BASE_URL}/partners): FastSME integration partners.
 - [How we compare]({BASE_URL}/compare): Source-linked recreation software comparison.
 - [Developers]({BASE_URL}/developers): API resources and interactive documentation.
 

@@ -26,7 +26,17 @@ from app.services.booking import (
     validate_time_range,
 )
 from app.ui.main import create_ui_app
-from app.ui.pages.platform import comparison_page, features_page, landing_page
+from app.ui.pages.platform import (
+    comparison_page,
+    features_page,
+    industries_page,
+    industry_page,
+    integrations_page,
+    landing_page,
+    partners_page,
+    tour_page,
+)
+from app.ui.seo import sitemap
 
 
 def test_all_configurable_product_modules_are_registered():
@@ -139,6 +149,8 @@ def test_landing_page_leads_with_recreation_and_fastcrm():
     assert "14-day" not in html
     assert 'href="/features"' in html
     assert 'href="/compare"' in html
+    for path in ("/industries", "/tour", "/integrations", "/partners"):
+        assert f'href="{path}"' in html
 
 
 def test_recreation_walkthrough_gif_is_packaged():
@@ -164,10 +176,58 @@ def test_features_and_comparison_are_public_and_source_linked():
     assert comparison_html.count("https://") >= 7
 
 
+def test_industry_integration_partner_and_tour_pages_are_public():
+    industries_html = to_xml(industries_page())
+    sport_html = to_xml(industry_page("sport-recreation"))
+    integrations_html = to_xml(integrations_page())
+    partners_html = to_xml(partners_page())
+    tour_html = to_xml(tour_page())
+    for industry in (
+        "Sport &amp; recreation",
+        "Aquatics &amp; swim schools",
+        "Restaurants",
+        "Hotels &amp; accommodation",
+        "Clinics &amp; allied health",
+        "Events &amp; venues",
+    ):
+        assert industry in industries_html
+    assert "Prevent clashes" in sport_html
+    assert "FastClinic" in integrations_html
+    assert partners_html.count("Integration Partner") == 6
+    assert 'src="/static/product-demo.gif"' in tour_html
+
+
+@pytest.mark.asyncio
+async def test_sitemap_lists_every_public_marketing_route():
+    response = await sitemap()
+    xml = response.body.decode()
+    for path in (
+        "/features",
+        "/industries",
+        "/industries/sport-recreation",
+        "/industries/aquatics-swim-schools",
+        "/industries/restaurants",
+        "/industries/hotels",
+        "/industries/clinics",
+        "/industries/events-venues",
+        "/tour",
+        "/integrations",
+        "/partners",
+        "/compare",
+        "/developers",
+    ):
+        assert f"https://booking.fastsme.com{path}" in xml
+
+
 def test_customer_journeys_and_marketing_routes_are_registered():
     paths = {getattr(route, "path", "") for route in create_ui_app().routes}
     assert {
         "/features",
+        "/industries",
+        "/industries/{industry_slug}",
+        "/tour",
+        "/integrations",
+        "/partners",
         "/compare",
         "/access-pending",
         "/app",
