@@ -29,7 +29,10 @@ async def create_schema():
 async def lifespan(_app):
     if settings.ENVIRONMENT != "production":
         await create_schema()
-    yield
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
 
 api_app = create_api_app()

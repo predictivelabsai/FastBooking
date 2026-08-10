@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     DEPLOY_MODE: Literal["monolith", "api", "ui"] = "monolith"
     API_BASE_URL: str = "http://localhost:5023"
     DB_SCHEMA: str = "fastbooking"
+    DB_POOL_SIZE: int = 3
+    DB_MAX_OVERFLOW: int = 2
+    DB_POOL_TIMEOUT: int = 10
+    DB_POOL_RECYCLE: int = 1800
+    DB_APPLICATION_NAME: str = "fastbooking"
     SESSION_SECRET: str = "development-only-change-me"
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
